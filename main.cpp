@@ -1,10 +1,12 @@
 #include <iostream>
 #include <cstring>
 #include <vector>
-#include "main.h"
 
 using namespace std;
 
+#define MAX_TASK_TAG_LENGTH 1001
+#define MAX_NODE_NUM 300
+const int INF = 0x3f3f3ff3;
 
 typedef struct Task {
     int head;
@@ -57,7 +59,8 @@ int served[MAX_TASK_TAG_LENGTH];
 
 char dummy_string[50];
 
-char input_file[100] = "../instance/gdb/gdb5.dat"; // the instance can be changed here
+char input_file[100] = "../instance/gdb/gdb3.dat"; // the instance can be changed here
+//char input_file[100] = "../instance/egl/egl-e1-A.dat"; // the instance can be changed here
 
 
 void init() {
@@ -238,8 +241,9 @@ Individual greedy_init_individual_min_dis() {
             }
         }
 
+        // 头部为起点，且不是第一个任务，则不加入这条任务，重新派一辆车
         if (next_task_index != -1) {
-            if (task[next_task_index].head == depot and cycle.task_index.size() != 0) {
+            if (task[next_task_index].head == depot and !cycle.task_index.empty()) {
                 individual.solution.push_back(cycle);
                 Cycle temp_cycle;
                 cycle = temp_cycle;
@@ -250,6 +254,7 @@ Individual greedy_init_individual_min_dis() {
             cycle.task_index.push_back(next_task_index);
             cur_capacity += task[next_task_index].demand;
 
+            // 标记为服务过了
             served[next_task_index] = 1;
             if (next_task_index % 2 == 0) {
                 served[next_task_index + 1] = 1;
@@ -259,6 +264,7 @@ Individual greedy_init_individual_min_dis() {
             cur_task_num++;
             cur_node = task[next_task_index].tail;
 
+            // 回到了起点，派新的车
             if (task[next_task_index].tail == depot) {
                 individual.solution.push_back(cycle);
                 Cycle temp_cycle;
@@ -267,6 +273,77 @@ Individual greedy_init_individual_min_dis() {
                 cur_node = depot;
             }
         } else {
+            // 没有找到可以装得下的任务
+            individual.solution.push_back(cycle);
+            Cycle temp_cycle;
+            cycle = temp_cycle;
+            cur_capacity = 0;
+            cur_node = depot;
+        }
+    }
+
+    return individual;
+}
+
+
+Individual greedy_init_individual_min_dis_early_stop() {
+    Individual individual;
+    int cur_task_num = 0, cur_capacity = 0;
+    for (int i = 0; i < task_num * 2; i++) {
+        served[i] = 0;
+    }
+
+    Cycle cycle;
+    int cur_node = depot, cur_min_dis, next_task_index;
+    while (cur_task_num < task_num) {
+        cur_min_dis = INF;
+        next_task_index = -1;
+        for (int t = 0; t < task_num * 2; t++) {
+            if (served[t] == 0) {
+                if (min_cost[cur_node][task[t].head] < cur_min_dis && cur_capacity + task[t].demand <= capacity) {
+                    cur_min_dis = min_cost[cur_node][task[t].head];
+                    next_task_index = t;
+                }
+            }
+        }
+
+        // 头部为起点，且不是第一个任务，则不加入这条任务，重新派一辆车
+        // 当前任务到下个任务起点的距离 大于 回到起点并从起点到下个任务的距离，则直接回去
+        if (next_task_index != -1) {
+//            if ((task[next_task_index].head == depot and !cycle.task_index.empty()) ||
+//            min_cost[cur_node][depot] + min_cost[depot][task[next_task_index].head] < cur_min_dis) {
+            if (!cycle.task_index.empty() && (task[next_task_index].head == depot ||
+              min_cost[cur_node][depot] + min_cost[depot][task[next_task_index].head] <= cur_min_dis)) {
+                individual.solution.push_back(cycle);
+                Cycle temp_cycle;
+                cycle = temp_cycle;
+                cur_capacity = 0;
+                cur_node = depot;
+                continue;
+            }
+            cycle.task_index.push_back(next_task_index);
+            cur_capacity += task[next_task_index].demand;
+
+            // 标记为服务过了
+            served[next_task_index] = 1;
+            if (next_task_index % 2 == 0) {
+                served[next_task_index + 1] = 1;
+            } else {
+                served[next_task_index - 1] = 1;
+            }
+            cur_task_num++;
+            cur_node = task[next_task_index].tail;
+
+            // 回到了起点，派新的车
+            if (task[next_task_index].tail == depot) {
+                individual.solution.push_back(cycle);
+                Cycle temp_cycle;
+                cycle = temp_cycle;
+                cur_capacity = 0;
+                cur_node = depot;
+            }
+        } else {
+            // 没有找到可以装得下的任务
             individual.solution.push_back(cycle);
             Cycle temp_cycle;
             cycle = temp_cycle;
@@ -285,7 +362,7 @@ void calc_cost(Individual &individual) {
         int cur_cost = 0;
         int pre_node = depot;
         for (auto t : c.task_index) {
-            cur_cost += min_cost[pre_node][task[c.task_index[0]].head];
+            cur_cost += min_cost[pre_node][task[t].head];
             cur_cost += cost[task[t].head][task[t].tail];
             pre_node = task[t].tail;
         }
@@ -303,15 +380,19 @@ int main() {
     read_data();
     floyd();
     Individual individual = greedy_init_individual_min_dis();
-    for (const auto& c : individual.solution) {
-        for (int t : c.task_index) {
-            cout << task[t].head << " " << task[t].tail << " ";
-        }
-        cout << endl;
-    }
-
     calc_cost(individual);
-    cout << endl << individual.total_cost << endl;
+    cout << endl << individual.total_cost << " " << individual.solution.size() << endl;
+
+    individual = greedy_init_individual_min_dis_early_stop();
+    calc_cost(individual);
+    cout << endl << individual.total_cost << " " << individual.solution.size() << endl;
+//    for (const auto& c : individual.solution) {
+//        for (int t : c.task_index) {
+//            cout << task[t].head << " " << task[t].tail << " ";
+//        }
+//        cout << endl;
+//    }
+
 
 
     /*
