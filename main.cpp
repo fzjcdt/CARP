@@ -217,41 +217,45 @@ void read_data() {
 }
 
 
-void greedy() {
-}
-
-
-Individual rand_init_individual() {
+Individual greedy_init_individual_min_dis() {
     Individual individual;
     int cur_task_num = 0, cur_capacity = 0;
     for (int i = 0; i < task_num * 2; i++) {
         served[i] = 0;
     }
+
     Cycle cycle;
+    int cur_node = depot, cur_min_dis, next_task_index;
     while (cur_task_num < task_num) {
-        bool found_task = false;
+        cur_min_dis = INF;
+        next_task_index = -1;
         for (int t = 0; t < task_num * 2; t++) {
-            if (served[t] == 0 && cur_capacity + task[t].demand <= capacity) {
-                cycle.task.push_back(t);
-                cur_capacity += task[t].demand;
-                found_task = true;
-                served[t] = 1;
-                if (t % 2 == 0) {
-                    served[t + 1] = 1;
-                } else {
-                    served[t - 1] = 1;
+            if (served[t] == 0) {
+                if (min_cost[cur_node][task[t].head] < cur_min_dis && cur_capacity + task[t].demand <= capacity) {
+                    cur_min_dis = min_cost[cur_node][task[t].head];
+                    next_task_index = t;
                 }
-                break;
             }
         }
 
-        if (found_task) {
+        if (next_task_index != -1) {
+            cycle.task.push_back(next_task_index);
+            cur_capacity += task[next_task_index].demand;
+
+            served[next_task_index] = 1;
+            if (next_task_index % 2 == 0) {
+                served[next_task_index + 1] = 1;
+            } else {
+                served[next_task_index - 1] = 1;
+            }
             cur_task_num++;
+            cur_node = task[next_task_index].tail;
         } else {
             individual.solution.push_back(cycle);
-            Cycle t;
-            cycle = t;
+            Cycle temp_cycle;
+            cycle = temp_cycle;
             cur_capacity = 0;
+            cur_node = depot;
         }
     }
 
@@ -262,7 +266,7 @@ Individual rand_init_individual() {
 int main() {
     read_data();
     floyd();
-    Individual individual = rand_init_individual();
+    Individual individual = greedy_init_individual_min_dis();
     for (const auto& c : individual.solution) {
         for (int t : c.task) {
             cout << task[t].head << " " << task[t].tail << " ";
