@@ -14,7 +14,7 @@ typedef struct Task {
 
 
 typedef struct Cycle {
-    vector<int> task;
+    vector<int> task_index;
     int cycle_cost;
     int cycle_demand;
 } Cycle;
@@ -57,7 +57,7 @@ int served[MAX_TASK_TAG_LENGTH];
 
 char dummy_string[50];
 
-char input_file[100] = "../instance/gdb1.dat"; // the instance can be changed here
+char input_file[100] = "../instance/gdb/gdb5.dat"; // the instance can be changed here
 
 
 void init() {
@@ -239,7 +239,15 @@ Individual greedy_init_individual_min_dis() {
         }
 
         if (next_task_index != -1) {
-            cycle.task.push_back(next_task_index);
+            if (task[next_task_index].head == depot and cycle.task_index.size() != 0) {
+                individual.solution.push_back(cycle);
+                Cycle temp_cycle;
+                cycle = temp_cycle;
+                cur_capacity = 0;
+                cur_node = depot;
+                continue;
+            }
+            cycle.task_index.push_back(next_task_index);
             cur_capacity += task[next_task_index].demand;
 
             served[next_task_index] = 1;
@@ -250,6 +258,14 @@ Individual greedy_init_individual_min_dis() {
             }
             cur_task_num++;
             cur_node = task[next_task_index].tail;
+
+            if (task[next_task_index].tail == depot) {
+                individual.solution.push_back(cycle);
+                Cycle temp_cycle;
+                cycle = temp_cycle;
+                cur_capacity = 0;
+                cur_node = depot;
+            }
         } else {
             individual.solution.push_back(cycle);
             Cycle temp_cycle;
@@ -263,16 +279,39 @@ Individual greedy_init_individual_min_dis() {
 }
 
 
+void calc_cost(Individual &individual) {
+    int total_cost = 0;
+    for (auto c : individual.solution) {
+        int cur_cost = 0;
+        int pre_node = depot;
+        for (auto t : c.task_index) {
+            cur_cost += min_cost[pre_node][task[c.task_index[0]].head];
+            cur_cost += cost[task[t].head][task[t].tail];
+            pre_node = task[t].tail;
+        }
+
+        cur_cost += min_cost[pre_node][depot];
+        c.cycle_cost = cur_cost;
+        total_cost += cur_cost;
+    }
+
+    individual.total_cost = total_cost;
+}
+
+
 int main() {
     read_data();
     floyd();
     Individual individual = greedy_init_individual_min_dis();
     for (const auto& c : individual.solution) {
-        for (int t : c.task) {
+        for (int t : c.task_index) {
             cout << task[t].head << " " << task[t].tail << " ";
         }
         cout << endl;
     }
+
+    calc_cost(individual);
+    cout << endl << individual.total_cost << endl;
 
 
     /*
