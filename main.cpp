@@ -64,7 +64,7 @@ char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
 char input_files1[][100] = {
-        {"../instance/gdb/gdb1.dat"},
+        {"../instance/gdb/gdb8.dat"},
 //        {"../instance/gdb/gdb2.dat"},
 };
 
@@ -223,17 +223,6 @@ void print_array(int m[MAX_NODE_NUM][MAX_NODE_NUM]) {
     }
 }
 
-//
-//void print_adjacency_list() {
-//    for (int i = 1; i <= vertex_num; i++) {
-//        cout << i << ": ";
-//        for (int j = 0; j < adjacency_list[i].size(); j++) {
-//            cout << adjacency_list[i][j] << " ";
-//        }
-//        cout << endl;
-//    }
-//}
-
 
 void read_data(int file_index) {
     FILE *fp;
@@ -288,8 +277,8 @@ void read_data(int file_index) {
                 task[i * 2 - 2].head = temp_node1;
                 task[i * 2 - 2].tail = temp_node2;
                 task[i * 2 - 2].demand = temp_demand;
-                task[i * 2 - 1].head = temp_node1;
-                task[i * 2 - 1].tail = temp_node2;
+                task[i * 2 - 1].head = temp_node2;
+                task[i * 2 - 1].tail = temp_node1;
                 task[i * 2 - 1].demand = temp_demand;
                 total_demand += temp_demand;
 
@@ -322,219 +311,6 @@ void read_data(int file_index) {
     }
 
     fclose(fp);
-}
-
-
-Individual greedy_init_individual_min_dis() {
-    Individual individual;
-    int cur_task_num = 0, cur_capacity = 0;
-    for (int i = 0; i < task_num * 2; i++) {
-        served[i] = 0;
-    }
-
-    Cycle cycle;
-    int cur_node = depot, cur_min_dis, next_task_index;
-    while (cur_task_num < task_num) {
-        cur_min_dis = INF;
-        next_task_index = -1;
-        for (int t = 0; t < task_num * 2; t++) {
-            if (served[t] == 0) {
-                if (min_cost[cur_node][task[t].head] < cur_min_dis && cur_capacity + task[t].demand <= capacity) {
-                    cur_min_dis = min_cost[cur_node][task[t].head];
-                    next_task_index = t;
-                }
-            }
-        }
-
-        // 头部为起点，且不是第一个任务，则不加入这条任务，重新派一辆车
-        if (next_task_index != -1) {
-            if (task[next_task_index].head == depot and !cycle.task_index.empty()) {
-                individual.solution.push_back(cycle);
-                Cycle temp_cycle;
-                cycle = temp_cycle;
-                cur_capacity = 0;
-                cur_node = depot;
-                continue;
-            }
-            cycle.task_index.push_back(next_task_index);
-            cur_capacity += task[next_task_index].demand;
-
-            // 标记为服务过了
-            served[next_task_index] = 1;
-            if (next_task_index % 2 == 0) {
-                served[next_task_index + 1] = 1;
-            } else {
-                served[next_task_index - 1] = 1;
-            }
-            cur_task_num++;
-            cur_node = task[next_task_index].tail;
-
-            // 回到了起点，派新的车
-            if (task[next_task_index].tail == depot) {
-                individual.solution.push_back(cycle);
-                Cycle temp_cycle;
-                cycle = temp_cycle;
-                cur_capacity = 0;
-                cur_node = depot;
-            }
-        } else {
-            // 没有找到可以装得下的任务
-            individual.solution.push_back(cycle);
-            Cycle temp_cycle;
-            cycle = temp_cycle;
-            cur_capacity = 0;
-            cur_node = depot;
-        }
-    }
-
-    return individual;
-}
-
-
-Individual greedy_init_individual_min_dis_early_stop() {
-    Individual individual;
-    int cur_task_num = 0, cur_capacity = 0;
-    for (int i = 0; i < task_num * 2; i++) {
-        served[i] = 0;
-    }
-
-    Cycle cycle;
-    int cur_node = depot, cur_min_dis, next_task_index;
-    while (cur_task_num < task_num) {
-        cur_min_dis = INF;
-        next_task_index = -1;
-        for (int t = 0; t < task_num * 2; t++) {
-            if (served[t] == 0) {
-                if (min_cost[cur_node][task[t].head] < cur_min_dis && cur_capacity + task[t].demand <= capacity) {
-                    cur_min_dis = min_cost[cur_node][task[t].head];
-                    next_task_index = t;
-                }
-            }
-        }
-
-        // 头部为起点，且不是第一个任务，则不加入这条任务，重新派一辆车
-        // 当前任务到下个任务起点的距离 大于 回到起点并从起点到下个任务的距离，则直接回去
-        if (next_task_index != -1) {
-//            if ((task[next_task_index].head == depot and !cycle.task_index.empty()) ||
-//            min_cost[cur_node][depot] + min_cost[depot][task[next_task_index].head] < cur_min_dis) {
-            if (!cycle.task_index.empty() && (task[next_task_index].head == depot ||
-                                              min_cost[cur_node][depot] + min_cost[depot][task[next_task_index].head] <=
-                                              cur_min_dis)) {
-                individual.solution.push_back(cycle);
-                Cycle temp_cycle;
-                cycle = temp_cycle;
-                cur_capacity = 0;
-                cur_node = depot;
-                continue;
-            }
-            cycle.task_index.push_back(next_task_index);
-            cur_capacity += task[next_task_index].demand;
-
-            // 标记为服务过了
-            served[next_task_index] = 1;
-            if (next_task_index % 2 == 0) {
-                served[next_task_index + 1] = 1;
-            } else {
-                served[next_task_index - 1] = 1;
-            }
-            cur_task_num++;
-            cur_node = task[next_task_index].tail;
-
-            // 回到了起点，派新的车
-            if (task[next_task_index].tail == depot) {
-                individual.solution.push_back(cycle);
-                Cycle temp_cycle;
-                cycle = temp_cycle;
-                cur_capacity = 0;
-                cur_node = depot;
-            }
-        } else {
-            // 没有找到可以装得下的任务
-            individual.solution.push_back(cycle);
-            Cycle temp_cycle;
-            cycle = temp_cycle;
-            cur_capacity = 0;
-            cur_node = depot;
-        }
-    }
-
-    return individual;
-}
-
-
-Individual greedy_init_individual_min_dis_early_stop_large_demand() {
-    Individual individual;
-    int cur_task_num = 0, cur_capacity = 0;
-    for (int i = 0; i < task_num * 2; i++) {
-        served[i] = 0;
-    }
-
-    Cycle cycle;
-    int cur_node = depot, cur_min_dis, next_task_index;
-    while (cur_task_num < task_num) {
-        cur_min_dis = INF;
-        next_task_index = -1;
-        for (int t = 0; t < task_num * 2; t++) {
-            if (served[t] == 0) {
-//                if (min_cost[cur_node][task[t].head] < cur_min_dis && cur_capacity + task[t].demand <= capacity) {
-                if (cur_capacity + task[t].demand <= capacity) {
-                    if (min_cost[cur_node][task[t].head] < cur_min_dis ||
-                        (next_task_index != -1 && min_cost[cur_node][task[t].head] == cur_min_dis &&
-                         task[t].demand > task[next_task_index].demand)) {
-                        cur_min_dis = min_cost[cur_node][task[t].head];
-                        next_task_index = t;
-                    }
-                }
-            }
-        }
-
-        // 头部为起点，且不是第一个任务，则不加入这条任务，重新派一辆车
-        // 当前任务到下个任务起点的距离 大于 回到起点并从起点到下个任务的距离，则直接回去
-        if (next_task_index != -1) {
-//            if ((task[next_task_index].head == depot and !cycle.task_index.empty()) ||
-//            min_cost[cur_node][depot] + min_cost[depot][task[next_task_index].head] < cur_min_dis) {
-            if (!cycle.task_index.empty() && (task[next_task_index].head == depot ||
-                                              min_cost[cur_node][depot] + min_cost[depot][task[next_task_index].head] <=
-                                              cur_min_dis)) {
-                individual.solution.push_back(cycle);
-                Cycle temp_cycle;
-                cycle = temp_cycle;
-                cur_capacity = 0;
-                cur_node = depot;
-                continue;
-            }
-            cycle.task_index.push_back(next_task_index);
-            cur_capacity += task[next_task_index].demand;
-
-            // 标记为服务过了
-            served[next_task_index] = 1;
-            if (next_task_index % 2 == 0) {
-                served[next_task_index + 1] = 1;
-            } else {
-                served[next_task_index - 1] = 1;
-            }
-            cur_task_num++;
-            cur_node = task[next_task_index].tail;
-
-            // 回到了起点，派新的车
-            if (task[next_task_index].tail == depot) {
-                individual.solution.push_back(cycle);
-                Cycle temp_cycle;
-                cycle = temp_cycle;
-                cur_capacity = 0;
-                cur_node = depot;
-            }
-        } else {
-            // 没有找到可以装得下的任务
-            individual.solution.push_back(cycle);
-            Cycle temp_cycle;
-            cycle = temp_cycle;
-            cur_capacity = 0;
-            cur_node = depot;
-        }
-    }
-
-    return individual;
 }
 
 
@@ -594,6 +370,47 @@ Individual greedy_init_individual(int mode) {
                                 }
                             }
                             break;
+                        default:
+                            // 随机选五个中的一个
+                            switch (random_num(5) + 1) {
+                                case 1:
+                                    if (cost[task[t].head][task[t].tail] * 1.0 / task[t].demand <
+                                        cost[task[next_task_index].head][task[next_task_index].tail] * 1.0 /
+                                        task[next_task_index].demand) {
+                                        next_task_index = t;
+                                    }
+                                    break;
+                                case 2:
+                                    if (cost[task[t].head][task[t].tail] * 1.0 / task[t].demand >
+                                        cost[task[next_task_index].head][task[next_task_index].tail] * 1.0 /
+                                        task[next_task_index].demand) {
+                                        next_task_index = t;
+                                    }
+                                    break;
+                                case 3:
+                                    if (min_cost[task[t].tail][depot] < min_cost[task[next_task_index].tail][depot]) {
+                                        next_task_index = t;
+                                    }
+                                    break;
+                                case 4:
+                                    if (min_cost[task[t].tail][depot] > min_cost[task[next_task_index].tail][depot]) {
+                                        next_task_index = t;
+                                    }
+                                    break;
+                                case 5:
+                                    if (cur_capacity < capacity / 2) {
+                                        if (min_cost[task[t].tail][depot] >
+                                            min_cost[task[next_task_index].tail][depot]) {
+                                            next_task_index = t;
+                                        }
+                                    } else {
+                                        if (min_cost[task[t].tail][depot] <
+                                            min_cost[task[next_task_index].tail][depot]) {
+                                            next_task_index = t;
+                                        }
+                                    }
+                                    break;
+                            }
                     }
                 }
             }
@@ -667,16 +484,63 @@ void calc_cost(Individual &individual) {
         total_cost += cur_cost;
 
         if (cur_demand > capacity) {
-            cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! capacity" <<endl;
+            cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! capacity" << endl;
         }
         c.cycle_demand = cur_demand;
         demand_so_far += cur_demand;
     }
     if (demand_so_far != total_demand) {
-        cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! total_demand" <<endl;
+        cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! total_demand" << endl;
     }
 
     individual.total_cost = total_cost;
+}
+
+
+bool reverse_head_tail(Individual &individual) {
+    int pre_node, next_node, cycle_len, cost_change;
+    bool improved = true, improved_so_far = false;
+    int improve_t = 0;
+    while (improved) {
+        int cycle_num = -1;
+        improve_t++;
+        improved = false;
+        for (auto cycle : individual.solution) {
+            cycle_num++;
+            cycle_len = cycle.task_index.size();
+            for (int i = 0; i < cycle_len; i++) {
+                pre_node = i == 0 ? depot : task[cycle.task_index[i - 1]].tail;
+                next_node = i == cycle_len - 1 ? depot : task[cycle.task_index[i + 1]].head;
+                // 现在的cost减去变化后的cost，如果大于0，说明变化能减少cost
+                cost_change = min_cost[pre_node][task[cycle.task_index[i]].head] +
+                              min_cost[task[cycle.task_index[i]].tail][next_node]
+                              - min_cost[pre_node][task[cycle.task_index[i]].tail] -
+                              min_cost[task[cycle.task_index[i]].head][next_node];
+
+                if (cost_change > 0) {
+                    if (cycle.task_index[i] % 2 == 0) {
+                        individual.solution[cycle_num].task_index[i] = cycle.task_index[i] + 1;
+                    } else {
+                        individual.solution[cycle_num].task_index[i] = cycle.task_index[i] - 1;
+                    }
+                    improved = true;
+                    improved_so_far = true;
+                }
+            }
+        }
+    }
+
+    return improved_so_far;
+}
+
+
+void print_solution(Individual &individual) {
+    for (const auto &c : individual.solution) {
+        for (int t : c.task_index) {
+            cout << task[t].head << " " << task[t].tail << " ";
+        }
+        cout << endl;
+    }
 }
 
 
@@ -686,20 +550,19 @@ void run() {
         read_data(file_index);
         floyd();
 
-        for (int m = 1; m <= 5; m++) {
-//            Individual individual = greedy_init_individual(m);
+        int best = INF, best_m;
+        for (int m = 4; m <= 4; m++) {
             Individual individual = greedy_init_individual(m);
+//            print_solution(individual);
+            reverse_head_tail(individual);
             calc_cost(individual);
-            cout << individual.total_cost << " " << individual.solution.size() << ", ";
+            if (individual.total_cost < best) {
+                best = individual.total_cost;
+                best_m = m;
+            }
         }
-        cout << endl;
+        cout << "best: " << best << ", " << best_m << endl;
     }
-//    for (const auto& c : individual.solution) {
-//        for (int t : c.task_index) {
-//            cout << task[t].head << " " << task[t].tail << " ";
-//        }
-//        cout << endl;
-//    }
 }
 
 
