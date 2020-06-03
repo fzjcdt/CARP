@@ -534,8 +534,8 @@ bool reverse_head_tail(Individual &individual) {
 bool reverse_task(Individual &individual) {
     int pre_node, next_node, cycle_len, cost_change, l, r, temp_l, temp_r, temp;
     bool improved = true, improved_so_far = false;
-    improved = false;
     while (improved) {
+        improved = false;
         for (int cycle_num = 0; cycle_num < individual.solution.size(); cycle_num++) {
             cycle_len = individual.solution[cycle_num].task_index.size();
             for (int reverse_len = 1; reverse_len < cycle_len - 1; reverse_len++) {
@@ -604,21 +604,21 @@ void run() {
         floyd();
 
         int best = INF, best_m;
-        for (int m = 1; m <= 100; m++) {
+        for (int m = 1; m <= 1000; m++) {
             Individual individual = greedy_init_individual(m);
 //            print_solution(individual);
             calc_cost(individual);
             int before = individual.total_cost;
             if (reverse_task(individual) || reverse_head_tail(individual)) {
                 calc_cost(individual);
-                cout << before << ", " << individual.total_cost << endl;
+//                cout << before << ", " << individual.total_cost << endl;
                 if (before <= individual.total_cost) {
                     cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
                 }
             }
             if (individual.total_cost < best) {
                 best = individual.total_cost;
-                best_m = m;
+                best_m = individual.solution.size();
             }
         }
         cout << "best: " << best << ", " << best_m << endl;
