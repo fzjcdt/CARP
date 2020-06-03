@@ -637,9 +637,9 @@ bool swap_between_cycle(Individual &individual) {
     while (improved) {
         improved = false;
         for (fir_cycle_num = 0; fir_cycle_num < individual.solution.size() - 1; fir_cycle_num++) {
-            calc_cost(individual);
+//            calc_cost(individual);
             fir_cycle_len = individual.solution[fir_cycle_num].task_index.size();
-            for (fir_task = 0; fir_task < fir_cycle_len && !improved; fir_task++) {
+            for (fir_task = 0; fir_task < fir_cycle_len; fir_task++) {
                 fir_pre_node =
                         fir_task == 0 ? depot : task[individual.solution[fir_cycle_num].task_index[fir_task - 1]].tail;
                 fir_next_node =
@@ -671,18 +671,15 @@ bool swap_between_cycle(Individual &individual) {
                                           min_cost[fir_pre_node][sec_head] - min_cost[sec_tail][fir_next_node] -
                                           min_cost[sec_pre_node][fir_head] - min_cost[fir_tail][sec_next_node];
                             if (cost_change > 0) {
-                                calc_cost(individual);
-                                int before = individual.total_cost;
                                 temp = individual.solution[fir_cycle_num].task_index[fir_task];
                                 individual.solution[fir_cycle_num].task_index[fir_task] =
                                         individual.solution[sec_cycle_num].task_index[sec_task];
                                 individual.solution[sec_cycle_num].task_index[sec_task] = temp;
-                                calc_cost(individual);
-                                int after = individual.total_cost;
-//                                cout << "cost: " << before << ", " << after << endl;
-                                if (before != after + cost_change) {
-                                    cout << "saaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaam" << endl;
-                                }
+
+                                individual.solution[fir_cycle_num].cycle_demand =
+                                        fir_cycle_demand - fir_task_demand + sec_task_demand;
+                                individual.solution[sec_cycle_num].cycle_demand =
+                                        sec_cycle_demand - sec_task_demand + fir_task_demand;
                                 improved = true;
                                 improved_so_far = true;
                             }
@@ -718,17 +715,33 @@ void run() {
             Individual individual = greedy_init_individual(m);
             calc_cost(individual);
             int before = individual.total_cost;
-            if (reverse_task(individual) || reverse_head_tail(individual) || swap_in_cycle(individual) ||
-                swap_between_cycle(individual)) {
-                calc_cost(individual);
-                if (before <= individual.total_cost) {
-                    cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
-                }
+            bool improve = true;
+            while (improve) {
+                improve = false;
+                improve = reverse_task(individual) ? true : improve;
+                improve = reverse_head_tail(individual) ? true : improve;
+                improve = swap_in_cycle(individual) ? true : improve;
+                improve = swap_between_cycle(individual) ? true : improve;
             }
+
             if (individual.total_cost < best) {
                 best = individual.total_cost;
                 best_m = individual.solution.size();
             }
+
+            if (improve || true) {
+                calc_cost(individual);
+                if (before < individual.total_cost) {
+                    cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
+                }
+//                cout << before << " " << individual.total_cost << endl;
+            } else {
+                if (before != individual.total_cost) {
+                    cout << "no improve, but no same !!!!!!!!!!!!!!! " << before << " " << individual.total_cost
+                         << endl;
+                }
+            }
+
         }
         cout << "best: " << best << ", " << best_m << endl;
     }
