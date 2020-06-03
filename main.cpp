@@ -64,8 +64,8 @@ char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
 char input_files1[][100] = {
+        {"../instance/gdb/gdb1.dat"},
         {"../instance/val/val5A.dat"},
-//        {"../instance/gdb/gdb2.dat"},
 };
 
 char input_files[][100] = {
@@ -469,10 +469,11 @@ Individual greedy_init_individual(int mode) {
 
 void calc_cost(Individual &individual) {
     int total_cost = 0, demand_so_far = 0;
-    for (auto c : individual.solution) {
+//    for (auto c : individual.solution) {
+    for (int cycle_num = 0; cycle_num < individual.solution.size(); cycle_num++) {
         int cur_cost = 0, cur_demand = 0;
         int pre_node = depot;
-        for (auto t : c.task_index) {
+        for (auto t : individual.solution[cycle_num].task_index) {
             cur_cost += min_cost[pre_node][task[t].head];
             cur_cost += cost[task[t].head][task[t].tail];
             cur_demand += task[t].demand;
@@ -480,13 +481,13 @@ void calc_cost(Individual &individual) {
         }
 
         cur_cost += min_cost[pre_node][depot];
-        c.cycle_cost = cur_cost;
+        individual.solution[cycle_num].cycle_cost = cur_cost;
         total_cost += cur_cost;
 
         if (cur_demand > capacity) {
             cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! capacity" << endl;
         }
-        c.cycle_demand = cur_demand;
+        individual.solution[cycle_num].cycle_demand = cur_demand;
         demand_so_far += cur_demand;
     }
     if (demand_so_far != total_demand) {
@@ -643,14 +644,12 @@ void run() {
         floyd();
 
         int best = INF, best_m;
-        for (int m = 1; m <= 100; m++) {
+        for (int m = 1; m <= 2; m++) {
             Individual individual = greedy_init_individual(m);
-//            print_solution(individual);
             calc_cost(individual);
             int before = individual.total_cost;
             if (reverse_task(individual) || reverse_head_tail(individual) || swap_in_cycle(individual)) {
                 calc_cost(individual);
-//                cout << before << ", " << individual.total_cost << endl;
                 if (before <= individual.total_cost) {
                     cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
                 }
