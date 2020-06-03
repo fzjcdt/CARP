@@ -627,6 +627,76 @@ bool swap_in_cycle(Individual &individual) {
 }
 
 
+bool swap_between_cycle(Individual &individual) {
+    calc_cost(individual);
+    int fir_cycle_num, sec_cycle_num, fir_cycle_len, sec_cycle_len, fir_task, sec_task,
+            fir_cycle_demand, sec_cycle_demand, fir_task_demand, sec_task_demand,
+            fir_pre_node, fir_next_node, sec_pre_node, sec_next_node, cost_change,
+            fir_head, fir_tail, sec_head, sec_tail, temp;
+    bool improved = true, improved_so_far = false;
+    while (improved) {
+        improved = false;
+        for (fir_cycle_num = 0; fir_cycle_num < individual.solution.size() - 1; fir_cycle_num++) {
+            calc_cost(individual);
+            fir_cycle_len = individual.solution[fir_cycle_num].task_index.size();
+            for (fir_task = 0; fir_task < fir_cycle_len && !improved; fir_task++) {
+                fir_pre_node =
+                        fir_task == 0 ? depot : task[individual.solution[fir_cycle_num].task_index[fir_task - 1]].tail;
+                fir_next_node =
+                        fir_task == fir_cycle_len - 1 ? depot : task[individual.solution[fir_cycle_num].task_index[
+                                fir_task + 1]].head;
+                fir_head = task[individual.solution[fir_cycle_num].task_index[fir_task]].head;
+                fir_tail = task[individual.solution[fir_cycle_num].task_index[fir_task]].tail;
+                fir_cycle_demand = individual.solution[fir_cycle_num].cycle_demand;
+                fir_task_demand = task[individual.solution[fir_cycle_num].task_index[fir_task]].demand;
+                for (sec_cycle_num = fir_cycle_num + 1;
+                     sec_cycle_num < individual.solution.size() && !improved; sec_cycle_num++) {
+                    sec_cycle_len = individual.solution[sec_cycle_num].task_index.size();
+                    for (sec_task = 0; sec_task < sec_cycle_len && !improved; sec_task++) {
+                        sec_cycle_demand = individual.solution[sec_cycle_num].cycle_demand;
+                        sec_task_demand = task[individual.solution[sec_cycle_num].task_index[sec_task]].demand;
+                        if (fir_cycle_demand - fir_task_demand + sec_task_demand <= capacity &&
+                            sec_cycle_demand - sec_task_demand + fir_task_demand <= capacity) {
+                            sec_pre_node =
+                                    sec_task == 0 ? depot : task[individual.solution[sec_cycle_num].task_index[
+                                            sec_task -
+                                            1]].tail;
+                            sec_next_node = sec_task == sec_cycle_len - 1 ? depot
+                                                                          : task[individual.solution[sec_cycle_num].task_index[
+                                            sec_task + 1]].head;
+                            sec_head = task[individual.solution[sec_cycle_num].task_index[sec_task]].head;
+                            sec_tail = task[individual.solution[sec_cycle_num].task_index[sec_task]].tail;
+                            cost_change = min_cost[fir_pre_node][fir_head] + min_cost[fir_tail][fir_next_node] +
+                                          min_cost[sec_pre_node][sec_head] + min_cost[sec_tail][sec_next_node] -
+                                          min_cost[fir_pre_node][sec_head] - min_cost[sec_tail][fir_next_node] -
+                                          min_cost[sec_pre_node][fir_head] - min_cost[fir_tail][sec_next_node];
+                            if (cost_change > 0) {
+                                calc_cost(individual);
+                                int before = individual.total_cost;
+                                temp = individual.solution[fir_cycle_num].task_index[fir_task];
+                                individual.solution[fir_cycle_num].task_index[fir_task] =
+                                        individual.solution[sec_cycle_num].task_index[sec_task];
+                                individual.solution[sec_cycle_num].task_index[sec_task] = temp;
+                                calc_cost(individual);
+                                int after = individual.total_cost;
+//                                cout << "cost: " << before << ", " << after << endl;
+                                if (before != after + cost_change) {
+                                    cout << "saaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaam" << endl;
+                                }
+                                improved = true;
+                                improved_so_far = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return improved_so_far;
+}
+
+
 void print_solution(Individual &individual) {
     for (const auto &c : individual.solution) {
         for (int t : c.task_index) {
@@ -644,11 +714,12 @@ void run() {
         floyd();
 
         int best = INF, best_m;
-        for (int m = 1; m <= 2; m++) {
+        for (int m = 1; m <= 100; m++) {
             Individual individual = greedy_init_individual(m);
             calc_cost(individual);
             int before = individual.total_cost;
-            if (reverse_task(individual) || reverse_head_tail(individual) || swap_in_cycle(individual)) {
+            if (reverse_task(individual) || reverse_head_tail(individual) || swap_in_cycle(individual) ||
+                swap_between_cycle(individual)) {
                 calc_cost(individual);
                 if (before <= individual.total_cost) {
                     cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
