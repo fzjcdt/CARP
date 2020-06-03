@@ -423,9 +423,9 @@ Individual greedy_init_individual(int mode) {
 //            if ((task[next_task_index].head == depot and !cycle.task_index.empty()) ||
 //            min_cost[cur_node][depot] + min_cost[depot][task[next_task_index].head] < cur_min_dis) {
             if ((!cycle.task_index.empty() && (task[next_task_index].head == depot ||
-                                              min_cost[cur_node][depot] +
-                                              min_cost[depot][task[next_task_index].head] <=
-                                              cur_min_dis)) || (cur_capacity > capacity * 4 / 5) && random_num(10) < 3) {
+                                               min_cost[cur_node][depot] +
+                                               min_cost[depot][task[next_task_index].head] <=
+                                               cur_min_dis)) || (cur_capacity > capacity * 4 / 5) && random_num(10) < 3) {
                 // 容量大于4/5时有一定概率直接作为新的回路
                 individual.solution.push_back(cycle);
                 Cycle temp_cycle;
@@ -813,3 +813,4 @@ int main() {
     run();
     return 0;
 }
+
