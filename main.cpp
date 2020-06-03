@@ -329,7 +329,8 @@ Individual greedy_init_individual(int mode) {
         for (int t = 0; t < task_num * 2; t++) {
             if (served[t] == 0 && cur_capacity + task[t].demand <= capacity) {
                 // 第t个任务距离cur_node更近，则选第t个任务
-                if (min_cost[cur_node][task[t].head] < cur_min_dis) {
+                // 有一定概率不选最短的
+                if (min_cost[cur_node][task[t].head] < cur_min_dis && (next_task_index == -1 || random_num(5) < 3)) {
                     cur_min_dis = min_cost[cur_node][task[t].head];
                     next_task_index = t;
                 } else if (min_cost[cur_node][task[t].head] == cur_min_dis) {
@@ -421,10 +422,11 @@ Individual greedy_init_individual(int mode) {
         if (next_task_index != -1) {
 //            if ((task[next_task_index].head == depot and !cycle.task_index.empty()) ||
 //            min_cost[cur_node][depot] + min_cost[depot][task[next_task_index].head] < cur_min_dis) {
-            if (!cycle.task_index.empty() && (task[next_task_index].head == depot ||
+            if ((!cycle.task_index.empty() && (task[next_task_index].head == depot ||
                                               min_cost[cur_node][depot] +
                                               min_cost[depot][task[next_task_index].head] <=
-                                              cur_min_dis)) {
+                                              cur_min_dis)) || (cur_capacity > capacity * 4 / 5) && random_num(10) < 3) {
+                // 容量大于4/5时有一定概率直接作为新的回路
                 individual.solution.push_back(cycle);
                 Cycle temp_cycle;
                 cycle = temp_cycle;
