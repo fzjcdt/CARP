@@ -681,7 +681,7 @@ bool swap_between_cycle(Individual &individual) {
                                 int after = individual.total_cost;
 //                                cout << "cost: " << before << ", " << after << endl;
                                 if (before != after + cost_change) {
-                                    cout << "saaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaam" << endl;
+                                    cout << "saaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaam" << endl;
                                 }
                                 improved = true;
                                 improved_so_far = true;
