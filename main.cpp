@@ -65,7 +65,7 @@ char dummy_string[50];
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
 char input_files1[][100] = {
         {"../instance/gdb/gdb1.dat"},
-        {"../instance/val/val5A.dat"},
+//        {"../instance/val/val5A.dat"},
 };
 
 char input_files[][100] = {
@@ -694,6 +694,65 @@ bool swap_between_cycle(Individual &individual) {
 }
 
 
+bool insert_between_cycle(Individual &individual) {
+    calc_cost(individual);
+    int fir_cycle_num, sec_cycle_num, fir_cycle_len, sec_cycle_len, fir_task, sec_task,
+            fir_cycle_demand, sec_cycle_demand, fir_task_demand, sec_task_demand,
+            fir_pre_node, fir_next_node, sec_pre_node, cost_change,
+            fir_head, fir_tail, sec_head, temp;
+    bool improved = true, improved_so_far = false;
+    while (improved) {
+        improved = false;
+        for (fir_cycle_num = 0; fir_cycle_num < individual.solution.size(); fir_cycle_num++) {
+//            calc_cost(individual);
+            fir_cycle_len = individual.solution[fir_cycle_num].task_index.size();
+            for (fir_task = 0; fir_task < fir_cycle_len; fir_task++) {
+                fir_pre_node =
+                        fir_task == 0 ? depot : task[individual.solution[fir_cycle_num].task_index[fir_task - 1]].tail;
+                fir_next_node =
+                        fir_task == fir_cycle_len - 1 ? depot : task[individual.solution[fir_cycle_num].task_index[
+                                fir_task + 1]].head;
+                fir_head = task[individual.solution[fir_cycle_num].task_index[fir_task]].head;
+                fir_tail = task[individual.solution[fir_cycle_num].task_index[fir_task]].tail;
+                fir_cycle_demand = individual.solution[fir_cycle_num].cycle_demand;
+                fir_task_demand = task[individual.solution[fir_cycle_num].task_index[fir_task]].demand;
+                for (sec_cycle_num = 0; sec_cycle_num != fir_cycle_num && sec_cycle_num < individual.solution.size() &&
+                                        !improved; sec_cycle_num++) {
+                    sec_cycle_demand = individual.solution[sec_cycle_num].cycle_demand;
+                    if (sec_cycle_demand + fir_task_demand <= capacity) {
+                        sec_cycle_len = individual.solution[sec_cycle_num].task_index.size();
+                        for (sec_task = 0; sec_task < sec_cycle_len && !improved; sec_task++) {
+                            sec_pre_node =
+                                    sec_task == 0 ? depot : task[individual.solution[sec_cycle_num].task_index[
+                                            sec_task -
+                                            1]].tail;
+                            sec_head = task[individual.solution[sec_cycle_num].task_index[sec_task]].head;
+                            cost_change = min_cost[fir_pre_node][fir_head] + min_cost[fir_tail][fir_next_node] +
+                                          min_cost[sec_pre_node][sec_head] - min_cost[fir_pre_node][fir_next_node] -
+                                          min_cost[sec_pre_node][fir_head] - min_cost[fir_tail][sec_head];
+                            if (cost_change > 0) {
+                                temp = individual.solution[fir_cycle_num].task_index[fir_task];
+                                individual.solution[fir_cycle_num].task_index.erase(
+                                        individual.solution[fir_cycle_num].task_index.begin() + fir_task);
+                                individual.solution[sec_cycle_num].task_index.insert(
+                                        individual.solution[sec_cycle_num].task_index.begin() + sec_task, temp);
+                                individual.solution[fir_cycle_num].cycle_demand = fir_cycle_demand - fir_task_demand;
+                                individual.solution[sec_cycle_num].cycle_demand = sec_cycle_demand + fir_task_demand;
+                                fir_cycle_len--;
+                                improved = true;
+                                improved_so_far = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return improved_so_far;
+}
+
+
 void print_solution(Individual &individual) {
     for (const auto &c : individual.solution) {
         for (int t : c.task_index) {
@@ -722,6 +781,7 @@ void run() {
                 improve = reverse_head_tail(individual) ? true : improve;
                 improve = swap_in_cycle(individual) ? true : improve;
                 improve = swap_between_cycle(individual) ? true : improve;
+                improve = insert_between_cycle(individual) ? true : improve;
             }
 
             if (individual.total_cost < best) {
@@ -729,7 +789,7 @@ void run() {
                 best_m = individual.solution.size();
             }
 
-            if (improve || true) {
+            if (true) {
                 calc_cost(individual);
                 if (before < individual.total_cost) {
                     cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
@@ -741,9 +801,8 @@ void run() {
                          << endl;
                 }
             }
-
         }
-        cout << "best: " << best << ", " << best_m << endl;
+        cout << "best: " << best << ", " << best_m << ", " << vehicle_num << endl;
     }
 }
 
