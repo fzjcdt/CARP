@@ -66,12 +66,12 @@ vector<int> large_cycle;
 char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
-char input_files[][100] = {
+char input_files1[][100] = {
         {"../instance/val/val2C.dat"},
 //        {"../instance/egl/egl-e2-A.dat"},
 };
 
-char input_files1[][100] = {
+char input_files[][100] = {
         {"../instance/gdb/gdb1.dat"},
         {"../instance/gdb/gdb2.dat"},
         {"../instance/gdb/gdb3.dat"},
@@ -1059,6 +1059,7 @@ void merge(vector<int> &two_cycle_task, int mode) {
 
     int cur_node = depot, cur_min_dis, next_task_index, cur_task_num = 0;
     while (cur_task_num < two_cycle_task.size()) {
+//        cout << cur_task_num << ", " << two_cycle_task.size() << endl;
         cur_min_dis = INF;
         next_task_index = -1;
         for (int t = 0; t < task_num * 2; t++) {
@@ -1130,10 +1131,33 @@ void merge(vector<int> &two_cycle_task, int mode) {
 }
 
 
+int calc_split_result() {
+    int total_cost = 0;
+//    for (auto c : individual.solution) {
+    for (int cycle_num = 0; cycle_num < split_result.size(); cycle_num++) {
+        int cur_cost = 0;
+        int pre_node = depot;
+        for (auto t : split_result[cycle_num]) {
+            cur_cost += min_cost[pre_node][task[t].head];
+            cur_cost += cost[task[t].head][task[t].tail];
+            pre_node = task[t].tail;
+        }
+
+        cur_cost += min_cost[pre_node][depot];
+        total_cost += cur_cost;
+    }
+
+    return total_cost;
+}
+
+
 bool merge_split(Individual &individual) {
     vector<int> two_cycle_task;
+    vector<vector<int>> temp_split_rst;
+    int best_split_cost = INF;
     for (int i = 0; i < individual.solution.size() - 1; i++) {
         for (int j = i + 1; j < individual.solution.size(); j++) {
+            best_split_cost = INF;
             two_cycle_task.clear();
             for (int t = 0; t < individual.solution[i].task_index.size(); t++) {
                 two_cycle_task.push_back(individual.solution[i].task_index[t]);
@@ -1142,17 +1166,63 @@ bool merge_split(Individual &individual) {
                 two_cycle_task.push_back(individual.solution[j].task_index[t]);
             }
 
-            merge(two_cycle_task, random_num(5) + 1);
+            for (int m = 1; m <= 5; m++) {
+                merge(two_cycle_task, m);
+                int temp = calc_split_result();
+                if (temp < best_split_cost) {
+                    best_split_cost = temp;
+                    temp_split_rst.clear();
+                    for (int c = 0; c < split_result.size(); c++) {
+                        vector<int> temp_cycle;
+                        for (int t = 0; t < split_result[c].size(); t++) {
+                            temp_cycle.push_back(split_result[c][t]);
+                        }
+                        temp_split_rst.push_back(temp_cycle);
+                    }
+                }
+            }
+//            cout << "--------------------1" << endl;
+//            for (int c = 0; c < temp_split_rst.size(); c++) {
+//                for (int t = 0; t < temp_split_rst[c].size(); t++) {
+//                    cout << temp_split_rst[c][t] << ", ";
+//                }
+//                cout << endl;
+//            }
+//            cout << "--------------------2" << endl;
 //            calc_cost(individual);
 //            int before = individual.total_cost;
-            if (split_result.size() == 2) {
+            if (temp_split_rst.size() == 2) {
                 individual.solution[i].task_index.clear();
-                for (int t = 0; t < split_result[0].size(); t++) {
-                    individual.solution[i].task_index.push_back(split_result[0][t]);
+                for (int t = 0; t < temp_split_rst[0].size(); t++) {
+                    individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
                 }
                 individual.solution[j].task_index.clear();
-                for (int t = 0; t < split_result[1].size(); t++) {
-                    individual.solution[j].task_index.push_back(split_result[1][t]);
+                for (int t = 0; t < temp_split_rst[1].size(); t++) {
+                    individual.solution[j].task_index.push_back(temp_split_rst[1][t]);
+                }
+            } else if (temp_split_rst.size() == 1) {
+//                cout << "1111111111111111111111111111111111111" << endl;
+                individual.solution[i].task_index.clear();
+                for (int t = 0; t < temp_split_rst[0].size(); t++) {
+                    individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
+                }
+//                individual.solution[j].task_index.clear();
+                individual.solution.erase(individual.solution.begin() + j);
+            } else if (temp_split_rst.size() > 2) {
+                individual.solution[i].task_index.clear();
+                for (int t = 0; t < temp_split_rst[0].size(); t++) {
+                    individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
+                }
+                individual.solution[j].task_index.clear();
+                for (int t = 0; t < temp_split_rst[1].size(); t++) {
+                    individual.solution[j].task_index.push_back(temp_split_rst[1][t]);
+                }
+                for (int t = 2; t < temp_split_rst.size(); t++) {
+                    Cycle cycle;
+                    for (int task_i = 0; task_i < temp_split_rst[t].size(); task_i++) {
+                        cycle.task_index.push_back(temp_split_rst[t][task_i]);
+                    }
+                    individual.solution.push_back(cycle);
                 }
             }
 //            calc_cost(individual);
@@ -1194,7 +1264,8 @@ void run() {
             int time = 0;
             while (improve) {
                 time++;
-                cout << time << endl;
+                if (time > 100) break;
+//                cout << time << endl;
                 improve = false;
                 improve = reverse_task(individual) ? true : improve;
 //                improve = individual_ulusoy_split(individual) ? true : improve;
