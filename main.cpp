@@ -1043,17 +1043,19 @@ bool individual_ulusoy_split(Individual &individual) {
 }
 
 
-void merge(vector<int> &two_cycle_task, int mode) {
+void merge(vector<int> &two_cycle_task, int mode, bool direction) {
     for (int i = 0; i < task_num * 2; i++) {
         served[i] = 1;
     }
 
     for (int t = 0; t < two_cycle_task.size(); t++) {
         served[two_cycle_task[t]] = 0;
-        if (two_cycle_task[t] % 2 == 0) {
-//            served[two_cycle_task[t] + 1] = 0;
-        } else {
-//            served[two_cycle_task[t] - 1] = 0;
+        if (!direction) {
+            if (two_cycle_task[t] % 2 == 0) {
+                served[two_cycle_task[t] + 1] = 0;
+            } else {
+                served[two_cycle_task[t] - 1] = 0;
+            }
         }
     }
 
@@ -1133,6 +1135,104 @@ void merge(vector<int> &two_cycle_task, int mode) {
 }
 
 
+
+
+void merge_with_capacity(vector<int> &two_cycle_task, int mode, bool direction) {
+    for (int i = 0; i < task_num * 2; i++) {
+        served[i] = 1;
+    }
+
+    for (int t = 0; t < two_cycle_task.size(); t++) {
+        served[two_cycle_task[t]] = 0;
+        if (!direction) {
+            if (two_cycle_task[t] % 2 == 0) {
+                served[two_cycle_task[t] + 1] = 0;
+            } else {
+                served[two_cycle_task[t] - 1] = 0;
+            }
+        }
+    }
+
+    large_cycle.clear();
+
+    int cur_node = depot, cur_min_dis, next_task_index, cur_task_num = 0, cur_capacity = 0;
+    while (cur_task_num < two_cycle_task.size()) {
+//        cout << cur_task_num << ", " << two_cycle_task.size() << endl;
+        cur_min_dis = INF;
+        next_task_index = -1;
+        for (int t = 0; t < task_num * 2; t++) {
+            if (served[t] == 0 && cur_capacity + task[t].demand <= capacity) {
+                // 第t个任务距离cur_node更近，则选第t个任务
+                // 有一定概率不选最短的
+                if (min_cost[cur_node][task[t].head] < cur_min_dis) {
+                    cur_min_dis = min_cost[cur_node][task[t].head];
+                    next_task_index = t;
+                } else if (min_cost[cur_node][task[t].head] == cur_min_dis) {
+                    // 一样近时，五种方法选择
+                    switch (mode) {
+                        case 1:
+                            if (cost[task[t].head][task[t].tail] * 1.0 / task[t].demand <
+                                cost[task[next_task_index].head][task[next_task_index].tail] * 1.0 /
+                                task[next_task_index].demand) {
+                                next_task_index = t;
+                            }
+                            break;
+                        case 2:
+                            if (cost[task[t].head][task[t].tail] * 1.0 / task[t].demand >
+                                cost[task[next_task_index].head][task[next_task_index].tail] * 1.0 /
+                                task[next_task_index].demand) {
+                                next_task_index = t;
+                            }
+                            break;
+                        case 3:
+                            if (min_cost[task[t].tail][depot] < min_cost[task[next_task_index].tail][depot]) {
+                                next_task_index = t;
+                            }
+                            break;
+                        case 4:
+                            if (min_cost[task[t].tail][depot] > min_cost[task[next_task_index].tail][depot]) {
+                                next_task_index = t;
+                            }
+                            break;
+                        case 5:
+                            if (random_num(2) < 1) {
+                                if (min_cost[task[t].tail][depot] > min_cost[task[next_task_index].tail][depot]) {
+                                    next_task_index = t;
+                                }
+                            } else {
+                                if (min_cost[task[t].tail][depot] < min_cost[task[next_task_index].tail][depot]) {
+                                    next_task_index = t;
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+
+        // 头部为起点，且不是第一个任务，则不加入这条任务，重新派一辆车
+        // 当前任务到下个任务起点的距离 大于 回到起点并从起点到下个任务的距离，则直接回去
+        if (next_task_index != -1) {
+            served[next_task_index] = 1;
+            if (next_task_index % 2 == 0) {
+                served[next_task_index + 1] = 1;
+            } else {
+                served[next_task_index - 1] = 1;
+            }
+            cur_task_num++;
+            cur_node = task[next_task_index].tail;
+            large_cycle.push_back(next_task_index);
+            cur_capacity += task[next_task_index].demand;
+        } else {
+            cur_capacity = 0;
+            cur_node = depot;
+        }
+    }
+
+    ulusoy_split();
+}
+
+
 int calc_split_result() {
     int total_cost = 0;
 //    for (auto c : individual.solution) {
@@ -1169,7 +1269,57 @@ bool merge_split(Individual &individual) {
             }
 
             for (int m = 1; m <= 5; m++) {
-                merge(two_cycle_task, m);
+                merge(two_cycle_task, m, true);
+                int temp = calc_split_result();
+                if (temp < best_split_cost) {
+                    best_split_cost = temp;
+                    temp_split_rst.clear();
+                    for (int c = 0; c < split_result.size(); c++) {
+                        vector<int> temp_cycle;
+                        for (int t = 0; t < split_result[c].size(); t++) {
+                            temp_cycle.push_back(split_result[c][t]);
+                        }
+                        temp_split_rst.push_back(temp_cycle);
+                    }
+                }
+            }
+
+            for (int m = 1; m <= 5; m++) {
+                merge(two_cycle_task, m, false);
+                int temp = calc_split_result();
+                if (temp < best_split_cost) {
+                    best_split_cost = temp;
+                    temp_split_rst.clear();
+                    for (int c = 0; c < split_result.size(); c++) {
+                        vector<int> temp_cycle;
+                        for (int t = 0; t < split_result[c].size(); t++) {
+                            temp_cycle.push_back(split_result[c][t]);
+                        }
+                        temp_split_rst.push_back(temp_cycle);
+                    }
+                }
+            }
+
+
+            for (int m = 1; m <= 5; m++) {
+                merge_with_capacity(two_cycle_task, m, false);
+                int temp = calc_split_result();
+                if (temp < best_split_cost) {
+                    best_split_cost = temp;
+                    temp_split_rst.clear();
+                    for (int c = 0; c < split_result.size(); c++) {
+                        vector<int> temp_cycle;
+                        for (int t = 0; t < split_result[c].size(); t++) {
+                            temp_cycle.push_back(split_result[c][t]);
+                        }
+                        temp_split_rst.push_back(temp_cycle);
+                    }
+                }
+            }
+
+
+            for (int m = 1; m <= 5; m++) {
+                merge_with_capacity(two_cycle_task, m, true);
                 int temp = calc_split_result();
                 if (temp < best_split_cost) {
                     best_split_cost = temp;
