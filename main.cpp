@@ -60,15 +60,18 @@ int edge_id[MAX_NODE_NUM][MAX_NODE_NUM];
 Task task[MAX_TASK_TAG_LENGTH];
 int served[MAX_TASK_TAG_LENGTH];
 
+vector<vector<int>> split_result;
+vector<int> large_cycle;
+
 char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
-char input_files1[][100] = {
+char input_files[][100] = {
         {"../instance/gdb/gdb1.dat"},
 //        {"../instance/val/val5A.dat"},
 };
 
-char input_files[][100] = {
+char input_files1[][100] = {
         {"../instance/gdb/gdb1.dat"},
         {"../instance/gdb/gdb2.dat"},
         {"../instance/gdb/gdb3.dat"},
@@ -314,6 +317,105 @@ void read_data(int file_index) {
 }
 
 
+void ulusoy_split() {
+    split_result.clear();
+    int cycle_task_num = large_cycle.size();
+    int dis[cycle_task_num * 2][cycle_task_num * 2];
+    for (int i = 0; i < cycle_task_num * 2; i++) {
+        for (int j = 0; j < cycle_task_num * 2; j++) {
+            if (i == j || (i % 2 == 1 && i == j + 1)) {
+                dis[i][j] = 0;
+            } else {
+                dis[i][j] = INF;
+            }
+        }
+    }
+
+    int cur_demand, cur_cost, pre_node;
+    for (int start_index = 0; start_index < cycle_task_num; start_index++) {
+        cur_demand = 0;
+        cur_cost = 0;
+        for (int end_index = start_index; end_index < cycle_task_num; end_index++) {
+            pre_node = start_index == end_index ? depot : task[large_cycle[end_index - 1]].tail;
+            cur_demand += task[end_index].demand;
+            if (cur_demand <= capacity) {
+                cur_cost += min_cost[pre_node][task[large_cycle[end_index]].head];
+                cur_cost += cost[task[large_cycle[end_index]].head][task[large_cycle[end_index]].tail];
+                dis[start_index * 2][end_index * 2 + 1] = cur_cost + min_cost[task[large_cycle[end_index]].tail][depot];
+            } else {
+                break;
+            }
+        }
+    }
+
+    // Dijkstra
+    int min_dis[cycle_task_num * 2], p[cycle_task_num * 2], cur_min, u;
+    bool book[cycle_task_num * 2];
+    for (int i = 0; i < cycle_task_num * 2; i++) {
+        min_dis[i] = dis[0][i];
+        p[i] = 0;
+        book[i] = false;
+    }
+    book[0] = true;
+    for (int i = 0; i < cycle_task_num * 2; i++) {
+        cur_min = INF;
+        for (int j = 0; j < cycle_task_num * 2; j++) {
+            if (!book[j] && min_dis[j] < cur_min) {
+                cur_min = min_dis[j];
+                u = j;
+            }
+        }
+        book[u] = true;
+
+        for (int v = 0; v < cycle_task_num * 2; v++) {
+            if (!book[v] && dis[u][v] < INF) {
+                if (min_dis[v] > min_dis[u] + dis[u][v]) {
+                    min_dis[v] = min_dis[u] + dis[u][v];
+                    p[v] = u;
+                }
+            }
+        }
+    }
+//
+//    for (int i = 0; i < cycle_task_num * 2; i++) {
+//        for (int j = 0; j < cycle_task_num * 2; j++) {
+//            if (dis[i][j] != 1061109747) {
+//                cout << dis[i][j] << "\t";
+//            } else {
+//                cout << "-\t";
+//            }
+//        }
+//        cout << endl;
+//    }
+//    cout << endl;
+//    for (int i = 0; i < cycle_task_num * 2; i++) {
+//        cout << min_dis[i] << ", ";
+//    }
+//    cout << endl;
+//    cout << endl;
+//    for (int i = 0; i < cycle_task_num * 2; i++) {
+//        cout << p[i] << ", ";
+//    }
+//
+    int pre = p[cycle_task_num * 2 - 1];
+    while (pre != 0) {
+        cout << pre << ", ";
+        pre = p[pre];
+    }
+    cout << endl;
+    vector<int> min_path;
+    min_path.push_back(cycle_task_num * 2 - 1);
+    pre = p[cycle_task_num * 2 - 1];
+    while (pre != 0) {
+        min_path.push_back(pre);
+        pre = p[pre];
+    }
+    min_path.push_back(0);
+
+    // 分割
+}
+
+
 Individual greedy_init_individual(int mode) {
     Individual individual;
     int cur_task_num = 0, cur_capacity = 0;
@@ -330,7 +432,8 @@ Individual greedy_init_individual(int mode) {
             if (served[t] == 0 && cur_capacity + task[t].demand <= capacity) {
                 // 第t个任务距离cur_node更近，则选第t个任务
                 // 有一定概率不选最短的
-                if (min_cost[cur_node][task[t].head] < cur_min_dis && (next_task_index == -1 || random_num(5) < 3)) {
+                if (min_cost[cur_node][task[t].head] < cur_min_dis &&
+                    (next_task_index == -1 || random_num(5) < 3)) {
                     cur_min_dis = min_cost[cur_node][task[t].head];
                     next_task_index = t;
                 } else if (min_cost[cur_node][task[t].head] == cur_min_dis) {
@@ -389,12 +492,14 @@ Individual greedy_init_individual(int mode) {
                                     }
                                     break;
                                 case 3:
-                                    if (min_cost[task[t].tail][depot] < min_cost[task[next_task_index].tail][depot]) {
+                                    if (min_cost[task[t].tail][depot] <
+                                        min_cost[task[next_task_index].tail][depot]) {
                                         next_task_index = t;
                                     }
                                     break;
                                 case 4:
-                                    if (min_cost[task[t].tail][depot] > min_cost[task[next_task_index].tail][depot]) {
+                                    if (min_cost[task[t].tail][depot] >
+                                        min_cost[task[next_task_index].tail][depot]) {
                                         next_task_index = t;
                                     }
                                     break;
@@ -425,7 +530,8 @@ Individual greedy_init_individual(int mode) {
             if ((!cycle.task_index.empty() && (task[next_task_index].head == depot ||
                                                min_cost[cur_node][depot] +
                                                min_cost[depot][task[next_task_index].head] <=
-                                               cur_min_dis)) || (cur_capacity > capacity * 4 / 5) && random_num(10) < 3) {
+                                               cur_min_dis)) ||
+                (cur_capacity > capacity * 4 / 5) && random_num(10) < 3) {
                 // 容量大于4/5时有一定概率直接作为新的回路
                 individual.solution.push_back(cycle);
                 Cycle temp_cycle;
@@ -510,7 +616,8 @@ bool reverse_head_tail(Individual &individual) {
             cycle_len = individual.solution[cycle_num].task_index.size();
             for (int i = 0; i < cycle_len; i++) {
                 pre_node = i == 0 ? depot : task[individual.solution[cycle_num].task_index[i - 1]].tail;
-                next_node = i == cycle_len - 1 ? depot : task[individual.solution[cycle_num].task_index[i + 1]].head;
+                next_node =
+                        i == cycle_len - 1 ? depot : task[individual.solution[cycle_num].task_index[i + 1]].head;
                 // 现在的cost减去变化后的cost，如果大于0，说明变化能减少cost
                 cost_change = min_cost[pre_node][task[individual.solution[cycle_num].task_index[i]].head] +
                               min_cost[task[individual.solution[cycle_num].task_index[i]].tail][next_node]
@@ -519,9 +626,11 @@ bool reverse_head_tail(Individual &individual) {
 
                 if (cost_change > 0) {
                     if (individual.solution[cycle_num].task_index[i] % 2 == 0) {
-                        individual.solution[cycle_num].task_index[i] = individual.solution[cycle_num].task_index[i] + 1;
+                        individual.solution[cycle_num].task_index[i] =
+                                individual.solution[cycle_num].task_index[i] + 1;
                     } else {
-                        individual.solution[cycle_num].task_index[i] = individual.solution[cycle_num].task_index[i] - 1;
+                        individual.solution[cycle_num].task_index[i] =
+                                individual.solution[cycle_num].task_index[i] - 1;
                     }
                     improved = true;
                     improved_so_far = true;
@@ -643,7 +752,8 @@ bool swap_between_cycle(Individual &individual) {
             fir_cycle_len = individual.solution[fir_cycle_num].task_index.size();
             for (fir_task = 0; fir_task < fir_cycle_len; fir_task++) {
                 fir_pre_node =
-                        fir_task == 0 ? depot : task[individual.solution[fir_cycle_num].task_index[fir_task - 1]].tail;
+                        fir_task == 0 ? depot : task[individual.solution[fir_cycle_num].task_index[fir_task -
+                                                                                                   1]].tail;
                 fir_next_node =
                         fir_task == fir_cycle_len - 1 ? depot : task[individual.solution[fir_cycle_num].task_index[
                                 fir_task + 1]].head;
@@ -710,7 +820,8 @@ bool insert_between_cycle(Individual &individual) {
             fir_cycle_len = individual.solution[fir_cycle_num].task_index.size();
             for (fir_task = 0; fir_task < fir_cycle_len; fir_task++) {
                 fir_pre_node =
-                        fir_task == 0 ? depot : task[individual.solution[fir_cycle_num].task_index[fir_task - 1]].tail;
+                        fir_task == 0 ? depot : task[individual.solution[fir_cycle_num].task_index[fir_task -
+                                                                                                   1]].tail;
                 fir_next_node =
                         fir_task == fir_cycle_len - 1 ? depot : task[individual.solution[fir_cycle_num].task_index[
                                 fir_task + 1]].head;
@@ -718,8 +829,9 @@ bool insert_between_cycle(Individual &individual) {
                 fir_tail = task[individual.solution[fir_cycle_num].task_index[fir_task]].tail;
                 fir_cycle_demand = individual.solution[fir_cycle_num].cycle_demand;
                 fir_task_demand = task[individual.solution[fir_cycle_num].task_index[fir_task]].demand;
-                for (sec_cycle_num = 0; sec_cycle_num != fir_cycle_num && sec_cycle_num < individual.solution.size() &&
-                                        !improved; sec_cycle_num++) {
+                for (sec_cycle_num = 0;
+                     sec_cycle_num != fir_cycle_num && sec_cycle_num < individual.solution.size() &&
+                     !improved; sec_cycle_num++) {
                     sec_cycle_demand = individual.solution[sec_cycle_num].cycle_demand;
                     if (sec_cycle_demand + fir_task_demand <= capacity) {
                         sec_cycle_len = individual.solution[sec_cycle_num].task_index.size();
@@ -738,8 +850,10 @@ bool insert_between_cycle(Individual &individual) {
                                         individual.solution[fir_cycle_num].task_index.begin() + fir_task);
                                 individual.solution[sec_cycle_num].task_index.insert(
                                         individual.solution[sec_cycle_num].task_index.begin() + sec_task, temp);
-                                individual.solution[fir_cycle_num].cycle_demand = fir_cycle_demand - fir_task_demand;
-                                individual.solution[sec_cycle_num].cycle_demand = sec_cycle_demand + fir_task_demand;
+                                individual.solution[fir_cycle_num].cycle_demand =
+                                        fir_cycle_demand - fir_task_demand;
+                                individual.solution[sec_cycle_num].cycle_demand =
+                                        sec_cycle_demand + fir_task_demand;
                                 fir_cycle_len--;
                                 improved = true;
                                 improved_so_far = true;
@@ -772,7 +886,7 @@ void run() {
         floyd();
 
         int best = INF, best_m;
-        for (int m = 1; m <= 100; m++) {
+        for (int m = 1; m <= 1; m++) {
             Individual individual = greedy_init_individual(m);
             calc_cost(individual);
             int before = individual.total_cost;
@@ -803,6 +917,21 @@ void run() {
                          << endl;
                 }
             }
+
+            large_cycle.clear();
+            for (int i = 0; i < individual.solution[0].task_index.size(); i++) {
+                large_cycle.push_back(individual.solution[0].task_index[i]);
+            }
+            for (int i = 0; i < individual.solution[1].task_index.size(); i++) {
+                large_cycle.push_back(individual.solution[1].task_index[i]);
+            }
+//            for (int i = 0; i < individual.solution[2].task_index.size(); i++) {
+//                large_cycle.push_back(individual.solution[2].task_index[i]);
+//            }
+//            large_cycle.push_back(0);
+//            large_cycle.push_back(3);
+//            large_cycle.push_back(4);
+            ulusoy_split();
         }
         cout << "best: " << best << ", " << best_m << ", " << vehicle_num << endl;
     }
