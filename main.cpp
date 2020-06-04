@@ -67,8 +67,8 @@ char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
 char input_files[][100] = {
-        {"../instance/gdb/gdb1.dat"},
-//        {"../instance/val/val5A.dat"},
+//        {"../instance/gdb/gdb4.dat"},
+        {"../instance/egl/egl-s4-C.dat"},
 };
 
 char input_files1[][100] = {
@@ -398,11 +398,11 @@ void ulusoy_split() {
 //    }
 //
     int pre = p[cycle_task_num * 2 - 1];
-    while (pre != 0) {
-        cout << pre << ", ";
-        pre = p[pre];
-    }
-    cout << endl;
+//    while (pre != 0) {
+//        cout << pre << ", ";
+//        pre = p[pre];
+//    }
+//    cout << endl;
     vector<int> min_path;
     min_path.push_back(cycle_task_num * 2 - 1);
     pre = p[cycle_task_num * 2 - 1];
@@ -411,6 +411,13 @@ void ulusoy_split() {
         pre = p[pre];
     }
     min_path.push_back(0);
+    for (int i = min_path.size() - 1; i >= 0; i -= 2) {
+        vector<int> temp_cycle;
+        for (int j = min_path[i] / 2; j < min_path[i - 1] / 2 + 1; j++) {
+            temp_cycle.push_back(large_cycle[j]);
+        }
+        split_result.push_back(temp_cycle);
+    }
 
     // 分割
 }
@@ -919,19 +926,28 @@ void run() {
             }
 
             large_cycle.clear();
-            for (int i = 0; i < individual.solution[0].task_index.size(); i++) {
-                large_cycle.push_back(individual.solution[0].task_index[i]);
+            for (int t = 0; t < individual.solution.size(); t++) {
+                for (int i = 0; i < individual.solution[t].task_index.size(); i++) {
+                    large_cycle.push_back(individual.solution[t].task_index[i]);
+                }
             }
-            for (int i = 0; i < individual.solution[1].task_index.size(); i++) {
-                large_cycle.push_back(individual.solution[1].task_index[i]);
+
+            for (int i = 0; i < individual.solution.size(); i++) {
+                for (int j = 0; j < individual.solution[i].task_index.size(); j++) {
+                    cout << individual.solution[i].task_index[j] << ", ";
+                }
+                cout << endl;
             }
-            for (int i = 0; i < individual.solution[2].task_index.size(); i++) {
-                large_cycle.push_back(individual.solution[2].task_index[i]);
-            }
-//            large_cycle.push_back(0);
-//            large_cycle.push_back(3);
-//            large_cycle.push_back(4);
+            cout << endl;
+
             ulusoy_split();
+
+            for (int i = 0; i < split_result.size(); i++) {
+                for (int j = 0; j < split_result[i].size(); j++) {
+                    cout << split_result[i][j] << ", ";
+                }
+                cout << endl;
+            }
         }
         cout << "best: " << best << ", " << best_m << ", " << vehicle_num << endl;
     }
