@@ -323,7 +323,7 @@ void ulusoy_split() {
     int dis[cycle_task_num * 2][cycle_task_num * 2];
     for (int i = 0; i < cycle_task_num * 2; i++) {
         for (int j = 0; j < cycle_task_num * 2; j++) {
-            if (i == j || (i % 2 == 1 && i == j + 1)) {
+            if (i == j || (i % 2 == 1 && i == j - 1)) {
                 dis[i][j] = 0;
             } else {
                 dis[i][j] = INF;
@@ -925,9 +925,9 @@ void run() {
             for (int i = 0; i < individual.solution[1].task_index.size(); i++) {
                 large_cycle.push_back(individual.solution[1].task_index[i]);
             }
-//            for (int i = 0; i < individual.solution[2].task_index.size(); i++) {
-//                large_cycle.push_back(individual.solution[2].task_index[i]);
-//            }
+            for (int i = 0; i < individual.solution[2].task_index.size(); i++) {
+                large_cycle.push_back(individual.solution[2].task_index[i]);
+            }
 //            large_cycle.push_back(0);
 //            large_cycle.push_back(3);
 //            large_cycle.push_back(4);
