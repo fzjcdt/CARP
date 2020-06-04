@@ -66,12 +66,12 @@ vector<int> large_cycle;
 char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
-char input_files1[][100] = {
-//        {"../instance/gdb/gdb4.dat"},
-        {"../instance/egl/egl-e2-A.dat"},
+char input_files[][100] = {
+        {"../instance/val/val2C.dat"},
+//        {"../instance/egl/egl-e2-A.dat"},
 };
 
-char input_files[][100] = {
+char input_files1[][100] = {
         {"../instance/gdb/gdb1.dat"},
         {"../instance/gdb/gdb2.dat"},
         {"../instance/gdb/gdb3.dat"},
@@ -1041,8 +1041,129 @@ bool individual_ulusoy_split(Individual &individual) {
 }
 
 
+void merge(vector<int> &two_cycle_task, int mode) {
+    for (int i = 0; i < task_num * 2; i++) {
+        served[i] = 1;
+    }
+
+    for (int t = 0; t < two_cycle_task.size(); t++) {
+        served[two_cycle_task[t]] = 0;
+        if (two_cycle_task[t] % 2 == 0) {
+//            served[two_cycle_task[t] + 1] = 0;
+        } else {
+//            served[two_cycle_task[t] - 1] = 0;
+        }
+    }
+
+    large_cycle.clear();
+
+    int cur_node = depot, cur_min_dis, next_task_index, cur_task_num = 0;
+    while (cur_task_num < two_cycle_task.size()) {
+        cur_min_dis = INF;
+        next_task_index = -1;
+        for (int t = 0; t < task_num * 2; t++) {
+            if (served[t] == 0) {
+                // 第t个任务距离cur_node更近，则选第t个任务
+                // 有一定概率不选最短的
+                if (min_cost[cur_node][task[t].head] < cur_min_dis) {
+                    cur_min_dis = min_cost[cur_node][task[t].head];
+                    next_task_index = t;
+                } else if (min_cost[cur_node][task[t].head] == cur_min_dis) {
+                    // 一样近时，五种方法选择
+                    switch (mode) {
+                        case 1:
+                            if (cost[task[t].head][task[t].tail] * 1.0 / task[t].demand <
+                                cost[task[next_task_index].head][task[next_task_index].tail] * 1.0 /
+                                task[next_task_index].demand) {
+                                next_task_index = t;
+                            }
+                            break;
+                        case 2:
+                            if (cost[task[t].head][task[t].tail] * 1.0 / task[t].demand >
+                                cost[task[next_task_index].head][task[next_task_index].tail] * 1.0 /
+                                task[next_task_index].demand) {
+                                next_task_index = t;
+                            }
+                            break;
+                        case 3:
+                            if (min_cost[task[t].tail][depot] < min_cost[task[next_task_index].tail][depot]) {
+                                next_task_index = t;
+                            }
+                            break;
+                        case 4:
+                            if (min_cost[task[t].tail][depot] > min_cost[task[next_task_index].tail][depot]) {
+                                next_task_index = t;
+                            }
+                            break;
+                        case 5:
+                            if (random_num(2) < 1) {
+                                if (min_cost[task[t].tail][depot] > min_cost[task[next_task_index].tail][depot]) {
+                                    next_task_index = t;
+                                }
+                            } else {
+                                if (min_cost[task[t].tail][depot] < min_cost[task[next_task_index].tail][depot]) {
+                                    next_task_index = t;
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+
+        // 头部为起点，且不是第一个任务，则不加入这条任务，重新派一辆车
+        // 当前任务到下个任务起点的距离 大于 回到起点并从起点到下个任务的距离，则直接回去
+        if (next_task_index != -1) {
+            served[next_task_index] = 1;
+            if (next_task_index % 2 == 0) {
+                served[next_task_index + 1] = 1;
+            } else {
+                served[next_task_index - 1] = 1;
+            }
+            cur_task_num++;
+            cur_node = task[next_task_index].tail;
+            large_cycle.push_back(next_task_index);
+        }
+    }
+
+    ulusoy_split();
+}
+
+
 bool merge_split(Individual &individual) {
-    return false;
+    vector<int> two_cycle_task;
+    for (int i = 0; i < individual.solution.size() - 1; i++) {
+        for (int j = i + 1; j < individual.solution.size(); j++) {
+            two_cycle_task.clear();
+            for (int t = 0; t < individual.solution[i].task_index.size(); t++) {
+                two_cycle_task.push_back(individual.solution[i].task_index[t]);
+            }
+            for (int t = 0; t < individual.solution[j].task_index.size(); t++) {
+                two_cycle_task.push_back(individual.solution[j].task_index[t]);
+            }
+
+            merge(two_cycle_task, random_num(5) + 1);
+//            calc_cost(individual);
+//            int before = individual.total_cost;
+            if (split_result.size() == 2) {
+                individual.solution[i].task_index.clear();
+                for (int t = 0; t < split_result[0].size(); t++) {
+                    individual.solution[i].task_index.push_back(split_result[0][t]);
+                }
+                individual.solution[j].task_index.clear();
+                for (int t = 0; t < split_result[1].size(); t++) {
+                    individual.solution[j].task_index.push_back(split_result[1][t]);
+                }
+            }
+//            calc_cost(individual);
+//            int after = individual.total_cost;
+//            if (before > after) {
+//                cout << "wefhjopasdijfhioasdjufljadfal;" << before << ", " << after << endl;
+//            }
+        }
+    }
+
+    return true;
 }
 
 
@@ -1064,12 +1185,16 @@ void run() {
 
         int best = INF, best_m;
         for (int m = 1; m <= 100; m++) {
+            cout << m << endl;
 //            Individual individual = greedy_init_individual(m);
             Individual individual = greedy_init_individual_split(m);
             calc_cost(individual);
             int before = individual.total_cost;
             bool improve = true;
+            int time = 0;
             while (improve) {
+                time++;
+                cout << time << endl;
                 improve = false;
                 improve = reverse_task(individual) ? true : improve;
 //                improve = individual_ulusoy_split(individual) ? true : improve;
@@ -1084,9 +1209,16 @@ void run() {
 //                improve = individual_ulusoy_split(individual) ? true : improve;
 
                 improve = insert_between_cycle(individual) ? true : improve;
+                merge_split(individual);
                 improve = individual_ulusoy_split(individual) ? true : improve;
+//                if (individual.total_cost < best) {
+//                    best = individual.total_cost;
+//                    best_m = individual.solution.size();
+//                    cout << best << endl;
+//                }
             }
 
+            calc_cost(individual);
             if (individual.total_cost < best) {
                 best = individual.total_cost;
                 best_m = individual.solution.size();
@@ -1095,7 +1227,7 @@ void run() {
             if (true) {
                 calc_cost(individual);
                 if (before < individual.total_cost) {
-                    cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
+//                    cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
                 }
 //                cout << before << " " << individual.total_cost << endl;
             } else {
