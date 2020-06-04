@@ -68,7 +68,7 @@ char dummy_string[50];
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
 char input_files1[][100] = {
 //        {"../instance/gdb/gdb4.dat"},
-        {"../instance/egl/egl-s4-C.dat"},
+        {"../instance/egl/egl-e2-A.dat"},
 };
 
 char input_files[][100] = {
@@ -1011,6 +1011,41 @@ bool insert_between_cycle(Individual &individual) {
 }
 
 
+bool individual_ulusoy_split(Individual &individual) {
+    large_cycle.clear();
+    calc_cost(individual);
+    int before = individual.total_cost;
+    for (int t = 0; t < individual.solution.size(); t++) {
+        for (int i = 0; i < individual.solution[t].task_index.size(); i++) {
+            large_cycle.push_back(individual.solution[t].task_index[i]);
+        }
+    }
+
+    ulusoy_split();
+
+    individual.solution.clear();
+    for (int i = 0; i < split_result.size(); i++) {
+        Cycle temp_c;
+        for (int j = 0; j < split_result[i].size(); j++) {
+            temp_c.task_index.push_back(split_result[i][j]);
+        }
+        individual.solution.push_back(temp_c);
+    }
+    calc_cost(individual);
+    int after = individual.total_cost;
+    if (before < after) {
+        cout << "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN" << endl;
+    }
+
+    return before < after;
+}
+
+
+bool merge_split(Individual &individual) {
+    return false;
+}
+
+
 void print_solution(Individual &individual) {
     for (const auto &c : individual.solution) {
         for (int t : c.task_index) {
@@ -1037,10 +1072,19 @@ void run() {
             while (improve) {
                 improve = false;
                 improve = reverse_task(individual) ? true : improve;
+//                improve = individual_ulusoy_split(individual) ? true : improve;
+
                 improve = reverse_head_tail(individual) ? true : improve;
+//                improve = individual_ulusoy_split(individual) ? true : improve;
+
                 improve = swap_in_cycle(individual) ? true : improve;
+//                improve = individual_ulusoy_split(individual) ? true : improve;
+
                 improve = swap_between_cycle(individual) ? true : improve;
+//                improve = individual_ulusoy_split(individual) ? true : improve;
+
                 improve = insert_between_cycle(individual) ? true : improve;
+                improve = individual_ulusoy_split(individual) ? true : improve;
             }
 
             if (individual.total_cost < best) {
