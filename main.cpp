@@ -69,8 +69,8 @@ char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
 char input_files[][100] = {
-        {"../instance/gdb/gdb8.dat"},
-//        {"../instance/egl/egl-e2-A.dat"},
+//        {"../instance/gdb/gdb8.dat"},
+        {"../instance/egl/egl-e2-A.dat"},
 };
 
 char input_files1[][100] = {
@@ -1135,8 +1135,6 @@ void merge(vector<int> &two_cycle_task, int mode, bool direction) {
 }
 
 
-
-
 void merge_with_capacity(vector<int> &two_cycle_task, int mode, bool direction) {
     for (int i = 0; i < task_num * 2; i++) {
         served[i] = 1;
@@ -1458,13 +1456,27 @@ void run() {
 
         int best = INF, best_m;
         init_population();
+        vector<vector<int>> best_indiv;
+        int best_score = INF;
 
         for (int ite = 0; ite < 1000; ite++) {
+            cout << ite << endl;
+            sort(population.begin(), population.end(), sort_fun);
+            if (population[0].total_cost < best_score) {
+                best_indiv.clear();
+                for (int c = 0; c < population[0].solution.size(); c++) {
+                    vector<int> temp_cycle;
+                    for (int t = 0; t < population[0].solution[c].task_index.size(); t++) {
+                        temp_cycle.push_back(population[0].solution[c].task_index[t]);
+                    }
+                    best_indiv.push_back(temp_cycle);
+                }
+            }
             local_search();
             sort(population.begin(), population.end(), sort_fun);
             if (population[0].total_cost < best) {
                 best = population[0].total_cost;
-//                cout << "best: " << best << endl;
+                cout << "best: " << best << endl;
             }
             population.erase(population.begin() + 10, population.end());
 //            init_population();
@@ -1475,6 +1487,19 @@ void run() {
                     indiv = greedy_init_individual(random_num(20));
                 } else {
                     indiv = greedy_init_individual_split(random_num(20));
+                }
+                calc_cost(indiv);
+                population.push_back(indiv);
+            }
+
+            if (!best_indiv.empty()) {
+                Individual indiv;
+                for (int c = 0; c < best_indiv.size(); c++) {
+                    Cycle temp_cycle;
+                    for (int t = 0; t < best_indiv[c].size(); t++) {
+                        temp_cycle.task_index.push_back(best_indiv[c][t]);
+                    }
+                    indiv.solution.push_back(temp_cycle);
                 }
                 calc_cost(indiv);
                 population.push_back(indiv);
@@ -1539,6 +1564,7 @@ void run() {
 //        }
 //        cout << "best: " << best << ", " << best_m << ", " << vehicle_num << endl;
     }
+
 }
 
 
