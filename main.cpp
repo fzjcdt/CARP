@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <cstring>
 #include <vector>
 #include <cstdlib>
@@ -30,6 +31,7 @@ typedef struct Individual {
 //    int total_demand;
 } Individual;
 
+vector<Individual> population;
 
 int depot;
 int vertex_num;
@@ -66,12 +68,12 @@ vector<int> large_cycle;
 char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
-char input_files1[][100] = {
-        {"../instance/val/val2C.dat"},
+char input_files[][100] = {
+        {"../instance/gdb/gdb8.dat"},
 //        {"../instance/egl/egl-e2-A.dat"},
 };
 
-char input_files[][100] = {
+char input_files1[][100] = {
         {"../instance/gdb/gdb1.dat"},
         {"../instance/gdb/gdb2.dat"},
         {"../instance/gdb/gdb3.dat"},
@@ -1247,6 +1249,57 @@ void print_solution(Individual &individual) {
 }
 
 
+bool sort_fun(const Individual &indiv1, const Individual &indiv2) {
+    return indiv1.total_cost < indiv2.total_cost;
+}
+
+
+void init_population() {
+    population.clear();
+
+    for (int m = 1; m <= 10; m++) {
+        Individual individual = greedy_init_individual(m);
+        reverse_task(individual);
+        reverse_head_tail(individual);
+        swap_in_cycle(individual);
+        swap_between_cycle(individual);
+        insert_between_cycle(individual);
+        merge_split(individual);
+        individual_ulusoy_split(individual);
+        calc_cost(individual);
+        population.push_back(individual);
+    }
+
+    for (int m = 1; m <= 10; m++) {
+        Individual individual = greedy_init_individual_split(m);
+        reverse_task(individual);
+        reverse_head_tail(individual);
+        swap_in_cycle(individual);
+        swap_between_cycle(individual);
+        insert_between_cycle(individual);
+        merge_split(individual);
+        individual_ulusoy_split(individual);
+        calc_cost(individual);
+        population.push_back(individual);
+    }
+}
+
+void local_search() {
+    for (int i = 0; i < population.size(); i++) {
+        calc_cost(population[i]);
+
+        reverse_task(population[i]);
+        reverse_head_tail(population[i]);
+        swap_in_cycle(population[i]);
+        swap_between_cycle(population[i]);
+        insert_between_cycle(population[i]);
+        merge_split(population[i]);
+        individual_ulusoy_split(population[i]);
+        calc_cost(population[i]);
+    }
+}
+
+
 void run() {
     for (int file_index = 0; file_index < file_num; file_index++) {
         cout << input_files[file_index] << endl;
@@ -1254,96 +1307,87 @@ void run() {
         floyd();
 
         int best = INF, best_m;
-        for (int m = 1; m <= 100; m++) {
-//            Individual individual = greedy_init_individual(m);
-            Individual individual = greedy_init_individual_split(m);
-            calc_cost(individual);
-            int before = individual.total_cost;
-            bool improve = true;
-            int time = 0;
-            while (improve) {
-                time++;
-                if (time > 100) break;
-//                cout << time << endl;
-                improve = false;
-                improve = reverse_task(individual) ? true : improve;
-//                improve = individual_ulusoy_split(individual) ? true : improve;
+        init_population();
 
-                improve = reverse_head_tail(individual) ? true : improve;
-//                improve = individual_ulusoy_split(individual) ? true : improve;
+        for (int ite = 0; ite < 1000; ite++) {
+            local_search();
+            sort(population.begin(), population.end(), sort_fun);
+            if (population[0].total_cost < best) {
+                best = population[0].total_cost;
+//                cout << "best: " << best << endl;
+            }
+            population.erase(population.begin() + 10, population.end());
+//            init_population();
+//            population.erase(population.begin(), population.begin() + 50);
+            for (int add = 0; add < 10; add++) {
+                Individual indiv;
+                if (random_num(2) < 1) {
+                    indiv = greedy_init_individual(random_num(20));
+                } else {
+                    indiv = greedy_init_individual_split(random_num(20));
+                }
+                calc_cost(indiv);
+                population.push_back(indiv);
+            }
+        }
 
-                improve = swap_in_cycle(individual) ? true : improve;
+        sort(population.begin(), population.end(), sort_fun);
+        cout << "best: " << best << endl;
+//        cout << population[0].total_cost << ", " << population[0].solution.size() << ", " << vehicle_num << endl;
+//        for (int m = 1; m <= 100; m++) {
+////            Individual individual = greedy_init_individual(m);
+//            Individual individual = greedy_init_individual_split(m);
+//            calc_cost(individual);
+//            int before = individual.total_cost;
+//            bool improve = true;
+//            int time = 0;
+//            while (improve) {
+//                time++;
+//                if (time > 1000) break;
+////                cout << time << endl;
+//                improve = false;
+//                improve = reverse_task(individual) ? true : improve;
+////                improve = individual_ulusoy_split(individual) ? true : improve;
+//
+//                improve = reverse_head_tail(individual) ? true : improve;
+////                improve = individual_ulusoy_split(individual) ? true : improve;
+//
+//                improve = swap_in_cycle(individual) ? true : improve;
+////                improve = individual_ulusoy_split(individual) ? true : improve;
+//
+//                improve = swap_between_cycle(individual) ? true : improve;
+////                improve = individual_ulusoy_split(individual) ? true : improve;
+//
+//                improve = insert_between_cycle(individual) ? true : improve;
+//                merge_split(individual);
 //                improve = individual_ulusoy_split(individual) ? true : improve;
-
-                improve = swap_between_cycle(individual) ? true : improve;
-//                improve = individual_ulusoy_split(individual) ? true : improve;
-
-                improve = insert_between_cycle(individual) ? true : improve;
-                merge_split(individual);
-                improve = individual_ulusoy_split(individual) ? true : improve;
 //                if (individual.total_cost < best) {
 //                    best = individual.total_cost;
 //                    best_m = individual.solution.size();
 //                    cout << best << endl;
 //                }
-            }
-
-            calc_cost(individual);
-            if (individual.total_cost < best) {
-                best = individual.total_cost;
-                best_m = individual.solution.size();
-            }
-
-            if (true) {
-                calc_cost(individual);
-                if (before < individual.total_cost) {
-//                    cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
-                }
-//                cout << before << " " << individual.total_cost << endl;
-            } else {
-                if (before != individual.total_cost) {
-                    cout << "no improve, but no same !!!!!!!!!!!!!!! " << before << " " << individual.total_cost
-                         << endl;
-                }
-            }
-
-//            cout << individual.total_cost << endl;
-//            large_cycle.clear();
-//            for (int t = 0; t < individual.solution.size(); t++) {
-//                for (int i = 0; i < individual.solution[t].task_index.size(); i++) {
-//                    large_cycle.push_back(individual.solution[t].task_index[i]);
-//                }
 //            }
 //
-//            for (int i = 0; i < individual.solution.size(); i++) {
-//                for (int j = 0; j < individual.solution[i].task_index.size(); j++) {
-//                    cout << individual.solution[i].task_index[j] << ", ";
-//                }
-//                cout << endl;
-//            }
-//            cout << endl;
-//
-//            ulusoy_split();
-//
-//            for (int i = 0; i < split_result.size(); i++) {
-//                for (int j = 0; j < split_result[i].size(); j++) {
-//                    cout << split_result[i][j] << ", ";
-//                }
-//                cout << endl;
-//            }
-//
-//            individual.solution.clear();
-//            for (int i = 0; i < split_result.size(); i++) {
-//                Cycle temp_c;
-//                for (int j = 0; j < split_result[i].size(); j++) {
-//                    temp_c.task_index.push_back(split_result[i][j]);
-//                }
-//                individual.solution.push_back(temp_c);
-//            }
 //            calc_cost(individual);
-//            cout << individual.total_cost << endl;
-        }
-        cout << "best: " << best << ", " << best_m << ", " << vehicle_num << endl;
+//            if (individual.total_cost < best) {
+//                best = individual.total_cost;
+//                best_m = individual.solution.size();
+//            }
+//
+//            if (true) {
+//                calc_cost(individual);
+//                if (before < individual.total_cost) {
+////                    cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
+//                }
+////                cout << before << " " << individual.total_cost << endl;
+//            } else {
+//                if (before != individual.total_cost) {
+//                    cout << "no improve, but no same !!!!!!!!!!!!!!! " << before << " " << individual.total_cost
+//                         << endl;
+//                }
+//            }
+//        }
+//        cout << "best: " << best << ", " << best_m << ", " << vehicle_num << endl;
     }
 }
 
