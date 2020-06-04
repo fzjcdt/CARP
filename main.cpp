@@ -1254,17 +1254,27 @@ int calc_split_result() {
 bool merge_split(Individual &individual) {
     vector<int> two_cycle_task;
     vector<vector<int>> temp_split_rst;
-    int best_split_cost = INF;
+    int best_split_cost = INF, old_cost;
     for (int i = 0; i < individual.solution.size() - 1; i++) {
         for (int j = i + 1; j < individual.solution.size(); j++) {
             best_split_cost = INF;
             two_cycle_task.clear();
+            split_result.clear();
+            vector<int> temp_cycle1;
+            vector<int> temp_cycle2;
             for (int t = 0; t < individual.solution[i].task_index.size(); t++) {
                 two_cycle_task.push_back(individual.solution[i].task_index[t]);
+                temp_cycle1.push_back(individual.solution[i].task_index[t]);
             }
+            split_result.push_back(temp_cycle1);
             for (int t = 0; t < individual.solution[j].task_index.size(); t++) {
                 two_cycle_task.push_back(individual.solution[j].task_index[t]);
+                temp_cycle2.push_back(individual.solution[j].task_index[t]);
             }
+            split_result.push_back(temp_cycle2);
+            best_split_cost = calc_split_result();
+            old_cost = best_split_cost;
+            split_result.clear();
 
             for (int m = 1; m <= 5; m++) {
                 merge(two_cycle_task, m, true);
@@ -1341,38 +1351,40 @@ bool merge_split(Individual &individual) {
 //            cout << "--------------------2" << endl;
 //            calc_cost(individual);
 //            int before = individual.total_cost;
-            if (temp_split_rst.size() == 2) {
-                individual.solution[i].task_index.clear();
-                for (int t = 0; t < temp_split_rst[0].size(); t++) {
-                    individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
-                }
-                individual.solution[j].task_index.clear();
-                for (int t = 0; t < temp_split_rst[1].size(); t++) {
-                    individual.solution[j].task_index.push_back(temp_split_rst[1][t]);
-                }
-            } else if (temp_split_rst.size() == 1) {
-//                cout << "1111111111111111111111111111111111111" << endl;
-                individual.solution[i].task_index.clear();
-                for (int t = 0; t < temp_split_rst[0].size(); t++) {
-                    individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
-                }
-//                individual.solution[j].task_index.clear();
-                individual.solution.erase(individual.solution.begin() + j);
-            } else if (temp_split_rst.size() > 2) {
-                individual.solution[i].task_index.clear();
-                for (int t = 0; t < temp_split_rst[0].size(); t++) {
-                    individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
-                }
-                individual.solution[j].task_index.clear();
-                for (int t = 0; t < temp_split_rst[1].size(); t++) {
-                    individual.solution[j].task_index.push_back(temp_split_rst[1][t]);
-                }
-                for (int t = 2; t < temp_split_rst.size(); t++) {
-                    Cycle cycle;
-                    for (int task_i = 0; task_i < temp_split_rst[t].size(); task_i++) {
-                        cycle.task_index.push_back(temp_split_rst[t][task_i]);
+            if (best_split_cost < old_cost) {
+                if (temp_split_rst.size() == 2) {
+                    individual.solution[i].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[0].size(); t++) {
+                        individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
                     }
-                    individual.solution.push_back(cycle);
+                    individual.solution[j].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[1].size(); t++) {
+                        individual.solution[j].task_index.push_back(temp_split_rst[1][t]);
+                    }
+                } else if (temp_split_rst.size() == 1) {
+//                cout << "1111111111111111111111111111111111111" << endl;
+                    individual.solution[i].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[0].size(); t++) {
+                        individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
+                    }
+//                individual.solution[j].task_index.clear();
+                    individual.solution.erase(individual.solution.begin() + j);
+                } else if (temp_split_rst.size() > 2) {
+                    individual.solution[i].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[0].size(); t++) {
+                        individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
+                    }
+                    individual.solution[j].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[1].size(); t++) {
+                        individual.solution[j].task_index.push_back(temp_split_rst[1][t]);
+                    }
+                    for (int t = 2; t < temp_split_rst.size(); t++) {
+                        Cycle cycle;
+                        for (int task_i = 0; task_i < temp_split_rst[t].size(); task_i++) {
+                            cycle.task_index.push_back(temp_split_rst[t][task_i]);
+                        }
+                        individual.solution.push_back(cycle);
+                    }
                 }
             }
 //            calc_cost(individual);
@@ -1380,6 +1392,144 @@ bool merge_split(Individual &individual) {
 //            if (before > after) {
 //                cout << "wefhjopasdijfhioasdjufljadfal;" << before << ", " << after << endl;
 //            }
+        }
+    }
+
+    return true;
+}
+
+
+bool merge_split_three(Individual &individual) {
+    vector<int> two_cycle_task;
+    vector<vector<int>> temp_split_rst;
+    int best_split_cost = INF;
+    for (int i = 0; i < individual.solution.size() - 2; i++) {
+        for (int j = i + 1; j < individual.solution.size() - 1; j++) {
+            for (int k = j + 1; k < individual.solution.size(); k++) {
+                best_split_cost = INF;
+                two_cycle_task.clear();
+                for (int t = 0; t < individual.solution[i].task_index.size(); t++) {
+                    two_cycle_task.push_back(individual.solution[i].task_index[t]);
+                }
+                for (int t = 0; t < individual.solution[j].task_index.size(); t++) {
+                    two_cycle_task.push_back(individual.solution[j].task_index[t]);
+                }
+
+                for (int m = 1; m <= 5; m++) {
+                    merge(two_cycle_task, m, true);
+                    int temp = calc_split_result();
+                    if (temp < best_split_cost) {
+                        best_split_cost = temp;
+                        temp_split_rst.clear();
+                        for (int c = 0; c < split_result.size(); c++) {
+                            vector<int> temp_cycle;
+                            for (int t = 0; t < split_result[c].size(); t++) {
+                                temp_cycle.push_back(split_result[c][t]);
+                            }
+                            temp_split_rst.push_back(temp_cycle);
+                        }
+                    }
+                }
+
+                for (int m = 1; m <= 5; m++) {
+                    merge(two_cycle_task, m, false);
+                    int temp = calc_split_result();
+                    if (temp < best_split_cost) {
+                        best_split_cost = temp;
+                        temp_split_rst.clear();
+                        for (int c = 0; c < split_result.size(); c++) {
+                            vector<int> temp_cycle;
+                            for (int t = 0; t < split_result[c].size(); t++) {
+                                temp_cycle.push_back(split_result[c][t]);
+                            }
+                            temp_split_rst.push_back(temp_cycle);
+                        }
+                    }
+                }
+
+
+                for (int m = 1; m <= 5; m++) {
+                    merge_with_capacity(two_cycle_task, m, false);
+                    int temp = calc_split_result();
+                    if (temp < best_split_cost) {
+                        best_split_cost = temp;
+                        temp_split_rst.clear();
+                        for (int c = 0; c < split_result.size(); c++) {
+                            vector<int> temp_cycle;
+                            for (int t = 0; t < split_result[c].size(); t++) {
+                                temp_cycle.push_back(split_result[c][t]);
+                            }
+                            temp_split_rst.push_back(temp_cycle);
+                        }
+                    }
+                }
+
+
+                for (int m = 1; m <= 5; m++) {
+                    merge_with_capacity(two_cycle_task, m, true);
+                    int temp = calc_split_result();
+                    if (temp < best_split_cost) {
+                        best_split_cost = temp;
+                        temp_split_rst.clear();
+                        for (int c = 0; c < split_result.size(); c++) {
+                            vector<int> temp_cycle;
+                            for (int t = 0; t < split_result[c].size(); t++) {
+                                temp_cycle.push_back(split_result[c][t]);
+                            }
+                            temp_split_rst.push_back(temp_cycle);
+                        }
+                    }
+                }
+//            cout << "--------------------1" << endl;
+//            for (int c = 0; c < temp_split_rst.size(); c++) {
+//                for (int t = 0; t < temp_split_rst[c].size(); t++) {
+//                    cout << temp_split_rst[c][t] << ", ";
+//                }
+//                cout << endl;
+//            }
+//            cout << "--------------------2" << endl;
+//            calc_cost(individual);
+//            int before = individual.total_cost;
+                if (temp_split_rst.size() == 2) {
+                    individual.solution[i].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[0].size(); t++) {
+                        individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
+                    }
+                    individual.solution[j].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[1].size(); t++) {
+                        individual.solution[j].task_index.push_back(temp_split_rst[1][t]);
+                    }
+                } else if (temp_split_rst.size() == 1) {
+//                cout << "1111111111111111111111111111111111111" << endl;
+                    individual.solution[i].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[0].size(); t++) {
+                        individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
+                    }
+//                individual.solution[j].task_index.clear();
+                    individual.solution.erase(individual.solution.begin() + j);
+                } else if (temp_split_rst.size() > 2) {
+                    individual.solution[i].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[0].size(); t++) {
+                        individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
+                    }
+                    individual.solution[j].task_index.clear();
+                    for (int t = 0; t < temp_split_rst[1].size(); t++) {
+                        individual.solution[j].task_index.push_back(temp_split_rst[1][t]);
+                    }
+                    for (int t = 2; t < temp_split_rst.size(); t++) {
+                        Cycle cycle;
+                        for (int task_i = 0; task_i < temp_split_rst[t].size(); task_i++) {
+                            cycle.task_index.push_back(temp_split_rst[t][task_i]);
+                        }
+                        individual.solution.push_back(cycle);
+                    }
+                }
+//            calc_cost(individual);
+//            int after = individual.total_cost;
+//            if (before > after) {
+//                cout << "wefhjopasdijfhioasdjufljadfal;" << before << ", " << after << endl;
+//            }
+            }
         }
     }
 
