@@ -337,7 +337,7 @@ void ulusoy_split() {
         cur_cost = 0;
         for (int end_index = start_index; end_index < cycle_task_num; end_index++) {
             pre_node = start_index == end_index ? depot : task[large_cycle[end_index - 1]].tail;
-            cur_demand += task[end_index].demand;
+            cur_demand += task[large_cycle[end_index]].demand;
             if (cur_demand <= capacity) {
                 cur_cost += min_cost[pre_node][task[large_cycle[end_index]].head];
                 cur_cost += cost[task[large_cycle[end_index]].head][task[large_cycle[end_index]].tail];
@@ -600,7 +600,7 @@ void calc_cost(Individual &individual) {
         total_cost += cur_cost;
 
         if (cur_demand > capacity) {
-            cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! capacity" << endl;
+            cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! capacity: " << cur_demand << ", " << capacity << endl;
         }
         individual.solution[cycle_num].cycle_demand = cur_demand;
         demand_so_far += cur_demand;
@@ -925,6 +925,7 @@ void run() {
                 }
             }
 
+            cout << individual.total_cost << endl;
             large_cycle.clear();
             for (int t = 0; t < individual.solution.size(); t++) {
                 for (int i = 0; i < individual.solution[t].task_index.size(); i++) {
@@ -948,6 +949,17 @@ void run() {
                 }
                 cout << endl;
             }
+
+            individual.solution.clear();
+            for (int i = 0; i < split_result.size(); i++) {
+                Cycle temp_c;
+                for (int j = 0; j < split_result[i].size(); j++) {
+                    temp_c.task_index.push_back(split_result[i][j]);
+                }
+                individual.solution.push_back(temp_c);
+            }
+            calc_cost(individual);
+            cout << individual.total_cost << endl;
         }
         cout << "best: " << best << ", " << best_m << ", " << vehicle_num << endl;
     }
