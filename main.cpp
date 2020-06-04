@@ -1255,7 +1255,6 @@ void run() {
 
         int best = INF, best_m;
         for (int m = 1; m <= 100; m++) {
-            cout << m << endl;
 //            Individual individual = greedy_init_individual(m);
             Individual individual = greedy_init_individual_split(m);
             calc_cost(individual);
