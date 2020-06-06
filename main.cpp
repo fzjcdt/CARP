@@ -1901,7 +1901,7 @@ void print_best_route(int file_index) {
         edge_num = 0;
         pre_node = depot;
         outputfile << depot << " " << route_id + 1 << " " << best_individual.solution[route_id].cycle_demand << " "
-             << best_individual.solution[route_id].cycle_cost << " ";
+                   << best_individual.solution[route_id].cycle_cost << " ";
 
         for (int t = 0; t < best_individual.solution[route_id].task_index.size(); t++) {
             head = task[best_individual.solution[route_id].task_index[t]].head;
@@ -1929,8 +1929,8 @@ void print_best_route(int file_index) {
                 get_path(pre_node, head, rst);
                 for (int p_id = 0; p_id < rst.size(); p_id++) {
                     cost_so_far += cost[pre_node][rst[p_id]];
-                    outputfile << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ",0,"
-                         << cost_so_far << ")";
+                    outputfile << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ","
+                               << demand_so_far << "," << cost_so_far << ")";
                     pre_node = rst[p_id];
                 }
             }
@@ -1938,7 +1938,7 @@ void print_best_route(int file_index) {
             demand_so_far += task[best_individual.solution[route_id].task_index[t]].demand;
 
             outputfile << "(S," << edge_id[head][tail] << "," << head << "," << tail << ","
-                 << demand_so_far << "," << cost_so_far << ")";
+                       << demand_so_far << "," << cost_so_far << ")";
             pre_node = tail;
         }
         rst.clear();
@@ -1946,7 +1946,7 @@ void print_best_route(int file_index) {
         for (int p_id = 0; p_id < rst.size(); p_id++) {
             cost_so_far += cost[pre_node][rst[p_id]];
             outputfile << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ",0,"
-                 << cost_so_far << ")";
+                       << cost_so_far << ")";
             pre_node = rst[p_id];
         }
         outputfile << "(D,0," << depot << "," << depot << "," << demand_so_far << "," << cost_so_far << ")";
@@ -1957,7 +1957,7 @@ void print_best_route(int file_index) {
 
 
 void run() {
-    clock_t start_time,end_time;
+    clock_t start_time, end_time;
     for (int file_index = 0; file_index < file_num; file_index++) {
         cout << input_files[file_index] << endl;
         for (int repeat = 0; repeat < 30; repeat++) {
@@ -1969,7 +1969,7 @@ void run() {
             init_population();
             sort(population.begin(), population.end(), sort_fun);
 
-            for (int ite = 0; ite < 10; ite++) {
+            for (int ite = 0; ite < 100; ite++) {
 //            cout << ite << endl;
                 local_search();
                 sort(population.begin(), population.end(), sort_fun);
