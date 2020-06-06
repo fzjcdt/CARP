@@ -3,6 +3,7 @@
 #include <cstring>
 #include <vector>
 #include <cstdlib>
+#include <fstream>
 #include <ctime>
 
 
@@ -72,11 +73,14 @@ int local_search_permutation[100];
 char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
-char input_files[][100] = {
+char input_files1[][100] = {
         {"../instance/gdb/gdb1.dat"},
+        {"../instance/gdb/gdb2.dat"},
+        {"../instance/gdb/gdb3.dat"},
+        {"../instance/gdb/gdb4.dat"},
 };
 
-char input_files1[][100] = {
+char input_files[][100] = {
         {"../instance/gdb/gdb1.dat"},
         {"../instance/gdb/gdb2.dat"},
         {"../instance/gdb/gdb3.dat"},
@@ -1831,9 +1835,16 @@ void init_population() {
 }
 
 void local_search() {
-    if (random_num(2) < 1)
+    int three_pro = 10, four_pro = 30;
+    if (vertex_num > 100) {
+        three_pro = 3;
+    }
+    if (vertex_num > 100) {
+        four_pro = 6;
+    }
+    if (random_num(three_pro) < 1)
         merge_split_three(population[0]);
-    if (random_num(6) < 1)
+    if (random_num(four_pro) < 1)
         merge_split_four(population[0]);
 
     int luckey = random_num(population.size() - 1) + 1;
@@ -1875,7 +1886,12 @@ void local_search() {
 }
 
 
-void print_best_route() {
+void print_best_route(int file_index) {
+    ofstream outputfile;
+    outputfile.open("./result.log", ios::app);
+    outputfile << input_files[file_index];
+    outputfile << endl;
+
     calc_cost(best_individual);
     int head, tail, pre_node = depot, cost_so_far, demand_so_far, edge_num;
     vector<int> rst;
@@ -1883,7 +1899,8 @@ void print_best_route() {
         cost_so_far = 0;
         demand_so_far = 0;
         edge_num = 0;
-        cout << depot << " " << route_id + 1 << " " << best_individual.solution[route_id].cycle_demand << " "
+        pre_node = depot;
+        outputfile << depot << " " << route_id + 1 << " " << best_individual.solution[route_id].cycle_demand << " "
              << best_individual.solution[route_id].cycle_cost << " ";
 
         for (int t = 0; t < best_individual.solution[route_id].task_index.size(); t++) {
@@ -1891,26 +1908,28 @@ void print_best_route() {
             tail = task[best_individual.solution[route_id].task_index[t]].tail;
             rst.clear();
             if (pre_node != head) {
-                get_path(depot, head, rst);
+                get_path(pre_node, head, rst);
                 edge_num += rst.size();
             }
             pre_node = tail;
+            edge_num++;
         }
         rst.clear();
         get_path(pre_node, depot, rst);
         edge_num += rst.size();
-        cout << edge_num << " ";
+        outputfile << edge_num << " ";
 
-        cout << "(D,0," << depot << "," << depot << ",0,0)";
+        pre_node = depot;
+        outputfile << "(D,0," << depot << "," << depot << ",0,0)";
         for (int t = 0; t < best_individual.solution[route_id].task_index.size(); t++) {
             head = task[best_individual.solution[route_id].task_index[t]].head;
             tail = task[best_individual.solution[route_id].task_index[t]].tail;
             if (pre_node != head) {
                 rst.clear();
-                get_path(depot, head, rst);
+                get_path(pre_node, head, rst);
                 for (int p_id = 0; p_id < rst.size(); p_id++) {
                     cost_so_far += cost[pre_node][rst[p_id]];
-                    cout << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ",0,"
+                    outputfile << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ",0,"
                          << cost_so_far << ")";
                     pre_node = rst[p_id];
                 }
@@ -1918,27 +1937,31 @@ void print_best_route() {
             cost_so_far += cost[head][tail];
             demand_so_far += task[best_individual.solution[route_id].task_index[t]].demand;
 
-            cout << "(S" << edge_id[head][tail] << "," << head << "," << tail << ","
-                 <<  demand_so_far << "," << cost_so_far << ")";
+            outputfile << "(S," << edge_id[head][tail] << "," << head << "," << tail << ","
+                 << demand_so_far << "," << cost_so_far << ")";
             pre_node = tail;
         }
         rst.clear();
         get_path(pre_node, depot, rst);
         for (int p_id = 0; p_id < rst.size(); p_id++) {
             cost_so_far += cost[pre_node][rst[p_id]];
-            cout << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ",0,"
+            outputfile << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ",0,"
                  << cost_so_far << ")";
             pre_node = rst[p_id];
         }
-        cout << "(D,0," << depot << "," << depot << "," << demand_so_far << "," << cost_so_far << ")";
+        outputfile << "(D,0," << depot << "," << depot << "," << demand_so_far << "," << cost_so_far << ")";
+        outputfile << endl;
     }
+    outputfile.close();
 }
 
 
 void run() {
+    clock_t start_time,end_time;
     for (int file_index = 0; file_index < file_num; file_index++) {
-        for (int repeat = 0; repeat = 30; repeat++) {
-            cout << input_files[file_index] << endl;
+        cout << input_files[file_index] << endl;
+        for (int repeat = 0; repeat < 30; repeat++) {
+            start_time = clock();
             read_data(file_index);
             floyd();
 
@@ -1953,6 +1976,7 @@ void run() {
                 if (population[0].total_cost < best) {
                     best = population[0].total_cost;
                     best_m = ite;
+                    end_time = clock();
 //                    cout << "best: " << best << ", " << best_m << endl;
                 }
                 population.erase(population.begin() + random_num(5) + 5, population.end());
@@ -1985,14 +2009,16 @@ void run() {
                 }
                 calc_cost(best_individual);
             }
+            cout << best << "," << double(end_time - start_time) / CLOCKS_PER_SEC << endl;
         }
-        print_best_route();
+        print_best_route(file_index);
     }
 }
 
 
 int main() {
     run();
+
     return 0;
 }
 
