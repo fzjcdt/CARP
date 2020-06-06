@@ -33,6 +33,7 @@ typedef struct Individual {
 } Individual;
 
 vector<Individual> population;
+Individual best_individual;
 
 int depot;
 int vertex_num;
@@ -65,18 +66,17 @@ int served[MAX_TASK_TAG_LENGTH];
 
 vector<vector<int>> split_result;
 vector<int> large_cycle;
+int local_search_permutation[100];
 
 
 char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
-char input_files1[][100] = {
-//        {"../instance/egl/egl-s4-A.dat"},
-        {"../instance/egl/egl-s4-B.dat"},
-        {"../instance/egl/egl-s4-C.dat"},
+char input_files[][100] = {
+        {"../instance/gdb/gdb1.dat"},
 };
 
-char input_files[][100] = {
+char input_files1[][100] = {
         {"../instance/gdb/gdb1.dat"},
         {"../instance/gdb/gdb2.dat"},
         {"../instance/gdb/gdb3.dat"},
@@ -170,6 +170,22 @@ int file_num = sizeof(input_files) / sizeof(char[100]);
 
 int random_num(int range) {
     return rand() % (range);
+}
+
+
+int random_permutation(int n) {
+    for (int i = 0; i < n; i++) {
+        local_search_permutation[i] = i;
+    }
+
+    int temp, p1, p2;
+    for (int i = 0; i < 100; i++) {
+        p1 = random_num(n);
+        p2 = random_num(n);
+        temp = local_search_permutation[p1];
+        local_search_permutation[p1] = local_search_permutation[p2];
+        local_search_permutation[p2] = temp;
+    }
 }
 
 
@@ -999,7 +1015,11 @@ bool individual_ulusoy_split(Individual &individual) {
     large_cycle.clear();
     calc_cost(individual);
     int before = individual.total_cost;
-    for (int t = 0; t < individual.solution.size(); t++) {
+    int size = individual.solution.size();
+    random_permutation(size);
+    int t;
+    for (int rand_i = 0; rand_i < individual.solution.size(); rand_i++) {
+        t = local_search_permutation[rand_i];
         for (int i = 0; i < individual.solution[t].task_index.size(); i++) {
             large_cycle.push_back(individual.solution[t].task_index[i]);
         }
@@ -1017,9 +1037,6 @@ bool individual_ulusoy_split(Individual &individual) {
     }
     calc_cost(individual);
     int after = individual.total_cost;
-    if (before < after) {
-        cout << "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN" << endl;
-    }
 
     return before < after;
 }
@@ -1821,63 +1838,156 @@ void local_search() {
 
     int luckey = random_num(population.size() - 1) + 1;
     merge_split_three(population[luckey]);
-    if (random_num(2) < 1)
+    if (random_num(4) < 1)
         merge_split_four(population[luckey]);
 
     for (int i = 0; i < population.size(); i++) {
         calc_cost(population[i]);
 
-        reverse_task(population[i]);
-        reverse_head_tail(population[i]);
-        swap_in_cycle(population[i]);
-        swap_between_cycle(population[i]);
-        insert_between_cycle(population[i]);
-        merge_split(population[i]);
-        individual_ulusoy_split(population[i]);
+        random_permutation(7);
+        for (int rand_i = 0; rand_i < 7; rand_i++) {
+            switch (local_search_permutation[rand_i]) {
+                case 0:
+                    reverse_task(population[i]);
+                    break;
+                case 1:
+                    reverse_head_tail(population[i]);
+                    break;
+                case 2:
+                    swap_in_cycle(population[i]);
+                    break;
+                case 3:
+                    swap_between_cycle(population[i]);
+                    break;
+                case 4:
+                    insert_between_cycle(population[i]);
+                    break;
+                case 5:
+                    merge_split(population[i]);
+                    break;
+                case 6:
+                    individual_ulusoy_split(population[i]);
+                    break;
+            }
+        }
         calc_cost(population[i]);
+    }
+}
+
+
+void print_best_route() {
+    calc_cost(best_individual);
+    int head, tail, pre_node = depot, cost_so_far, demand_so_far, edge_num;
+    vector<int> rst;
+    for (int route_id = 0; route_id < best_individual.solution.size(); route_id++) {
+        cost_so_far = 0;
+        demand_so_far = 0;
+        edge_num = 0;
+        cout << depot << " " << route_id + 1 << " " << best_individual.solution[route_id].cycle_demand << " "
+             << best_individual.solution[route_id].cycle_cost << " ";
+
+        for (int t = 0; t < best_individual.solution[route_id].task_index.size(); t++) {
+            head = task[best_individual.solution[route_id].task_index[t]].head;
+            tail = task[best_individual.solution[route_id].task_index[t]].tail;
+            rst.clear();
+            if (pre_node != head) {
+                get_path(depot, head, rst);
+                edge_num += rst.size();
+            }
+            pre_node = tail;
+        }
+        rst.clear();
+        get_path(pre_node, depot, rst);
+        edge_num += rst.size();
+        cout << edge_num << " ";
+
+        cout << "(D,0," << depot << "," << depot << ",0,0)";
+        for (int t = 0; t < best_individual.solution[route_id].task_index.size(); t++) {
+            head = task[best_individual.solution[route_id].task_index[t]].head;
+            tail = task[best_individual.solution[route_id].task_index[t]].tail;
+            if (pre_node != head) {
+                rst.clear();
+                get_path(depot, head, rst);
+                for (int p_id = 0; p_id < rst.size(); p_id++) {
+                    cost_so_far += cost[pre_node][rst[p_id]];
+                    cout << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ",0,"
+                         << cost_so_far << ")";
+                    pre_node = rst[p_id];
+                }
+            }
+            cost_so_far += cost[head][tail];
+            demand_so_far += task[best_individual.solution[route_id].task_index[t]].demand;
+
+            cout << "(S" << edge_id[head][tail] << "," << head << "," << tail << ","
+                 <<  demand_so_far << "," << cost_so_far << ")";
+            pre_node = tail;
+        }
+        rst.clear();
+        get_path(pre_node, depot, rst);
+        for (int p_id = 0; p_id < rst.size(); p_id++) {
+            cost_so_far += cost[pre_node][rst[p_id]];
+            cout << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ",0,"
+                 << cost_so_far << ")";
+            pre_node = rst[p_id];
+        }
+        cout << "(D,0," << depot << "," << depot << "," << demand_so_far << "," << cost_so_far << ")";
     }
 }
 
 
 void run() {
     for (int file_index = 0; file_index < file_num; file_index++) {
-//        cout << input_files[file_index] << endl;
-        read_data(file_index);
-        floyd();
+        for (int repeat = 0; repeat = 30; repeat++) {
+            cout << input_files[file_index] << endl;
+            read_data(file_index);
+            floyd();
 
-        int best = INF, best_m;
-        init_population();
-        sort(population.begin(), population.end(), sort_fun);
-
-        for (int ite = 0; ite < 100; ite++) {
-//            cout << ite << endl;
-            local_search();
+            int best = INF, best_m;
+            init_population();
             sort(population.begin(), population.end(), sort_fun);
-            if (population[0].total_cost < best) {
-                best = population[0].total_cost;
-                best_m = ite;
-//                cout << "best: " << best << endl;
-            }
-            population.erase(population.begin() + random_num(5) + 5, population.end());
+
+            for (int ite = 0; ite < 10; ite++) {
+//            cout << ite << endl;
+                local_search();
+                sort(population.begin(), population.end(), sort_fun);
+                if (population[0].total_cost < best) {
+                    best = population[0].total_cost;
+                    best_m = ite;
+//                    cout << "best: " << best << ", " << best_m << endl;
+                }
+                population.erase(population.begin() + random_num(5) + 5, population.end());
 //            init_population();
 //            population.erase(population.begin(), population.begin() + 50);
-            for (int add = 0; add < 20; add++) {
-                Individual indiv;
-                if (random_num(2) < 1) {
-                    indiv = greedy_init_individual(random_num(20) + 8);
-                } else {
-                    indiv = greedy_init_individual_split(random_num(20) + 9);
+                for (int add = 0; add < 10; add++) {
+                    Individual indiv;
+                    if (random_num(2) < 1) {
+                        indiv = greedy_init_individual(random_num(20) + 8);
+                    } else {
+                        indiv = greedy_init_individual_split(random_num(20) + 9);
+                    }
+                    calc_cost(indiv);
+                    population.push_back(indiv);
                 }
-                calc_cost(indiv);
-                population.push_back(indiv);
+            }
+
+            sort(population.begin(), population.end(), sort_fun);
+//            cout << "best: " << best << ", " << best_m << endl;
+//            cout << best << endl;
+
+            if (repeat == 0 || best < best_individual.total_cost) {
+                best_individual.solution.clear();
+                for (int c = 0; c < population[0].solution.size(); c++) {
+                    Cycle cycle;
+                    for (int t = 0; t < population[0].solution[c].task_index.size(); t++) {
+                        cycle.task_index.push_back(population[0].solution[c].task_index[t]);
+                    }
+                    best_individual.solution.push_back(cycle);
+                }
+                calc_cost(best_individual);
             }
         }
-
-        sort(population.begin(), population.end(), sort_fun);
-        cout << "best: " << best << ", " << best_m << endl;
-        cout << best << endl;
+        print_best_route();
     }
-
 }
 
 
