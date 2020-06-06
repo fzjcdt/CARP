@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <ctime>
 
+
 using namespace std;
 
 #define MAX_TASK_TAG_LENGTH 1001
@@ -65,36 +66,17 @@ int served[MAX_TASK_TAG_LENGTH];
 vector<vector<int>> split_result;
 vector<int> large_cycle;
 
+
 char dummy_string[50];
 
 //char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
-char input_files[][100] = {
-        {"../instance/gdb/gdb1.dat"},
-        {"../instance/gdb/gdb2.dat"},
-        {"../instance/gdb/gdb3.dat"},
-        {"../instance/gdb/gdb4.dat"},
-        {"../instance/gdb/gdb5.dat"},
-        {"../instance/gdb/gdb6.dat"},
-        {"../instance/gdb/gdb7.dat"},
-        {"../instance/gdb/gdb8.dat"},
-        {"../instance/gdb/gdb9.dat"},
-        {"../instance/gdb/gdb10.dat"},
-        {"../instance/gdb/gdb11.dat"},
-        {"../instance/gdb/gdb12.dat"},
-        {"../instance/gdb/gdb13.dat"},
-        {"../instance/gdb/gdb14.dat"},
-        {"../instance/gdb/gdb15.dat"},
-        {"../instance/gdb/gdb16.dat"},
-        {"../instance/gdb/gdb17.dat"},
-        {"../instance/gdb/gdb18.dat"},
-        {"../instance/gdb/gdb19.dat"},
-        {"../instance/gdb/gdb20.dat"},
-        {"../instance/gdb/gdb21.dat"},
-        {"../instance/gdb/gdb22.dat"},
-        {"../instance/gdb/gdb23.dat"},
+char input_files1[][100] = {
+//        {"../instance/egl/egl-s4-A.dat"},
+        {"../instance/egl/egl-s4-B.dat"},
+        {"../instance/egl/egl-s4-C.dat"},
 };
 
-char input_files1[][100] = {
+char input_files[][100] = {
         {"../instance/gdb/gdb1.dat"},
         {"../instance/gdb/gdb2.dat"},
         {"../instance/gdb/gdb3.dat"},
@@ -342,6 +324,8 @@ void read_data(int file_index) {
 
 void ulusoy_split() {
     split_result.clear();
+
+    // init new directed graph
     int cycle_task_num = large_cycle.size();
     int dis[cycle_task_num * 2][cycle_task_num * 2];
     for (int i = 0; i < cycle_task_num * 2; i++) {
@@ -354,6 +338,7 @@ void ulusoy_split() {
         }
     }
 
+    // generate new directed graph
     int cur_demand, cur_cost, pre_node;
     for (int start_index = 0; start_index < cycle_task_num; start_index++) {
         cur_demand = 0;
@@ -399,33 +384,9 @@ void ulusoy_split() {
             }
         }
     }
-//
-//    for (int i = 0; i < cycle_task_num * 2; i++) {
-//        for (int j = 0; j < cycle_task_num * 2; j++) {
-//            if (dis[i][j] != 1061109747) {
-//                cout << dis[i][j] << "\t";
-//            } else {
-//                cout << "-\t";
-//            }
-//        }
-//        cout << endl;
-//    }
-//    cout << endl;
-//    for (int i = 0; i < cycle_task_num * 2; i++) {
-//        cout << min_dis[i] << ", ";
-//    }
-//    cout << endl;
-//    cout << endl;
-//    for (int i = 0; i < cycle_task_num * 2; i++) {
-//        cout << p[i] << ", ";
-//    }
-//
+
+    // get shortest path
     int pre = p[cycle_task_num * 2 - 1];
-//    while (pre != 0) {
-//        cout << pre << ", ";
-//        pre = p[pre];
-//    }
-//    cout << endl;
     vector<int> min_path;
     min_path.push_back(cycle_task_num * 2 - 1);
     pre = p[cycle_task_num * 2 - 1];
@@ -434,6 +395,8 @@ void ulusoy_split() {
         pre = p[pre];
     }
     min_path.push_back(0);
+
+    // split result
     for (int i = min_path.size() - 1; i >= 0; i -= 2) {
         vector<int> temp_cycle;
         for (int j = min_path[i] / 2; j < min_path[i - 1] / 2 + 1; j++) {
@@ -441,8 +404,6 @@ void ulusoy_split() {
         }
         split_result.push_back(temp_cycle);
     }
-
-    // 分割
 }
 
 
@@ -1855,12 +1816,13 @@ void init_population() {
 void local_search() {
     if (random_num(2) < 1)
         merge_split_three(population[0]);
-    if (random_num(2) < 1)
+    if (random_num(6) < 1)
         merge_split_four(population[0]);
 
     int luckey = random_num(population.size() - 1) + 1;
     merge_split_three(population[luckey]);
-    merge_split_four(population[luckey]);
+    if (random_num(2) < 1)
+        merge_split_four(population[luckey]);
 
     for (int i = 0; i < population.size(); i++) {
         calc_cost(population[i]);
@@ -1896,10 +1858,10 @@ void run() {
                 best_m = ite;
 //                cout << "best: " << best << endl;
             }
-            population.erase(population.begin() + 10, population.end());
+            population.erase(population.begin() + random_num(5) + 5, population.end());
 //            init_population();
 //            population.erase(population.begin(), population.begin() + 50);
-            for (int add = 0; add < 10; add++) {
+            for (int add = 0; add < 20; add++) {
                 Individual indiv;
                 if (random_num(2) < 1) {
                     indiv = greedy_init_individual(random_num(20) + 8);
@@ -1912,63 +1874,8 @@ void run() {
         }
 
         sort(population.begin(), population.end(), sort_fun);
-//        cout << "best: " << best << ", " << best_m << endl;
+        cout << "best: " << best << ", " << best_m << endl;
         cout << best << endl;
-//        cout << population[0].total_cost << ", " << population[0].solution.size() << ", " << vehicle_num << endl;
-//        for (int m = 1; m <= 100; m++) {
-////            Individual individual = greedy_init_individual(m);
-//            Individual individual = greedy_init_individual_split(m);
-//            calc_cost(individual);
-//            int before = individual.total_cost;
-//            bool improve = true;
-//            int time = 0;
-//            while (improve) {
-//                time++;
-//                if (time > 1000) break;
-////                cout << time << endl;
-//                improve = false;
-//                improve = reverse_task(individual) ? true : improve;
-////                improve = individual_ulusoy_split(individual) ? true : improve;
-//
-//                improve = reverse_head_tail(individual) ? true : improve;
-////                improve = individual_ulusoy_split(individual) ? true : improve;
-//
-//                improve = swap_in_cycle(individual) ? true : improve;
-////                improve = individual_ulusoy_split(individual) ? true : improve;
-//
-//                improve = swap_between_cycle(individual) ? true : improve;
-////                improve = individual_ulusoy_split(individual) ? true : improve;
-//
-//                improve = insert_between_cycle(individual) ? true : improve;
-//                merge_split(individual);
-//                improve = individual_ulusoy_split(individual) ? true : improve;
-//                if (individual.total_cost < best) {
-//                    best = individual.total_cost;
-//                    best_m = individual.solution.size();
-//                    cout << best << endl;
-//                }
-//            }
-//
-//            calc_cost(individual);
-//            if (individual.total_cost < best) {
-//                best = individual.total_cost;
-//                best_m = individual.solution.size();
-//            }
-//
-//            if (true) {
-//                calc_cost(individual);
-//                if (before < individual.total_cost) {
-////                    cout << "noooooooooooooooooooooooooooooooooooo improve" << endl;
-//                }
-////                cout << before << " " << individual.total_cost << endl;
-//            } else {
-//                if (before != individual.total_cost) {
-//                    cout << "no improve, but no same !!!!!!!!!!!!!!! " << before << " " << individual.total_cost
-//                         << endl;
-//                }
-//            }
-//        }
-//        cout << "best: " << best << ", " << best_m << ", " << vehicle_num << endl;
     }
 
 }
