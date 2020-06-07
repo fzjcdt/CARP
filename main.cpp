@@ -72,104 +72,94 @@ int local_search_permutation[100];
 
 char dummy_string[50];
 
-//char input_file[100] = "../instance/gdb/gdb1.dat"; // the instance can be changed here
-char input_files1[][100] = {
-        {"../instance/gdb/gdb1.dat"},
-        {"../instance/gdb/gdb2.dat"},
-        {"../instance/gdb/gdb3.dat"},
-        {"../instance/gdb/gdb4.dat"},
-};
-
 char input_files[][100] = {
-        {"../instance/gdb/gdb1.dat"},
-        {"../instance/gdb/gdb2.dat"},
-        {"../instance/gdb/gdb3.dat"},
-        {"../instance/gdb/gdb4.dat"},
-        {"../instance/gdb/gdb5.dat"},
-        {"../instance/gdb/gdb6.dat"},
-        {"../instance/gdb/gdb7.dat"},
-        {"../instance/gdb/gdb8.dat"},
-        {"../instance/gdb/gdb9.dat"},
-        {"../instance/gdb/gdb10.dat"},
-        {"../instance/gdb/gdb11.dat"},
-        {"../instance/gdb/gdb12.dat"},
-        {"../instance/gdb/gdb13.dat"},
-        {"../instance/gdb/gdb14.dat"},
-        {"../instance/gdb/gdb15.dat"},
-        {"../instance/gdb/gdb16.dat"},
-        {"../instance/gdb/gdb17.dat"},
-        {"../instance/gdb/gdb18.dat"},
-        {"../instance/gdb/gdb19.dat"},
-        {"../instance/gdb/gdb20.dat"},
-        {"../instance/gdb/gdb21.dat"},
-        {"../instance/gdb/gdb22.dat"},
-        {"../instance/gdb/gdb23.dat"},
+        {"./instance/gdb/gdb1.dat"},
+        {"./instance/gdb/gdb2.dat"},
+        {"./instance/gdb/gdb3.dat"},
+        {"./instance/gdb/gdb4.dat"},
+        {"./instance/gdb/gdb5.dat"},
+        {"./instance/gdb/gdb6.dat"},
+        {"./instance/gdb/gdb7.dat"},
+        {"./instance/gdb/gdb8.dat"},
+        {"./instance/gdb/gdb9.dat"},
+        {"./instance/gdb/gdb10.dat"},
+        {"./instance/gdb/gdb11.dat"},
+        {"./instance/gdb/gdb12.dat"},
+        {"./instance/gdb/gdb13.dat"},
+        {"./instance/gdb/gdb14.dat"},
+        {"./instance/gdb/gdb15.dat"},
+        {"./instance/gdb/gdb16.dat"},
+        {"./instance/gdb/gdb17.dat"},
+        {"./instance/gdb/gdb18.dat"},
+        {"./instance/gdb/gdb19.dat"},
+        {"./instance/gdb/gdb20.dat"},
+        {"./instance/gdb/gdb21.dat"},
+        {"./instance/gdb/gdb22.dat"},
+        {"./instance/gdb/gdb23.dat"},
+//        // ---------------------------
+        {"./instance/val/val1A.dat"},
+        {"./instance/val/val1B.dat"},
+        {"./instance/val/val1C.dat"},
+        {"./instance/val/val2A.dat"},
+        {"./instance/val/val2B.dat"},
+        {"./instance/val/val2C.dat"},
+        {"./instance/val/val3A.dat"},
+        {"./instance/val/val3B.dat"},
+        {"./instance/val/val3C.dat"},
+        {"./instance/val/val4A.dat"},
+        {"./instance/val/val4B.dat"},
+        {"./instance/val/val4C.dat"},
+        {"./instance/val/val4D.dat"},
+        {"./instance/val/val5A.dat"},
+        {"./instance/val/val5B.dat"},
+        {"./instance/val/val5C.dat"},
+        {"./instance/val/val5D.dat"},
+        {"./instance/val/val6A.dat"},
+        {"./instance/val/val6B.dat"},
+        {"./instance/val/val6C.dat"},
+        {"./instance/val/val7A.dat"},
+        {"./instance/val/val7B.dat"},
+        {"./instance/val/val7C.dat"},
+        {"./instance/val/val8A.dat"},
+        {"./instance/val/val8B.dat"},
+        {"./instance/val/val8C.dat"},
+        {"./instance/val/val9A.dat"},
+        {"./instance/val/val9B.dat"},
+        {"./instance/val/val9C.dat"},
+        {"./instance/val/val9D.dat"},
+        {"./instance/val/val10A.dat"},
+        {"./instance/val/val10B.dat"},
+        {"./instance/val/val10C.dat"},
+        {"./instance/val/val10D.dat"},
         // ---------------------------
-        {"../instance/val/val1A.dat"},
-        {"../instance/val/val1B.dat"},
-        {"../instance/val/val1C.dat"},
-        {"../instance/val/val2A.dat"},
-        {"../instance/val/val2B.dat"},
-        {"../instance/val/val2C.dat"},
-        {"../instance/val/val3A.dat"},
-        {"../instance/val/val3B.dat"},
-        {"../instance/val/val3C.dat"},
-        {"../instance/val/val4A.dat"},
-        {"../instance/val/val4B.dat"},
-        {"../instance/val/val4C.dat"},
-        {"../instance/val/val4D.dat"},
-        {"../instance/val/val5A.dat"},
-        {"../instance/val/val5B.dat"},
-        {"../instance/val/val5C.dat"},
-        {"../instance/val/val5D.dat"},
-        {"../instance/val/val6A.dat"},
-        {"../instance/val/val6B.dat"},
-        {"../instance/val/val6C.dat"},
-        {"../instance/val/val7A.dat"},
-        {"../instance/val/val7B.dat"},
-        {"../instance/val/val7C.dat"},
-        {"../instance/val/val8A.dat"},
-        {"../instance/val/val8B.dat"},
-        {"../instance/val/val8C.dat"},
-        {"../instance/val/val9A.dat"},
-        {"../instance/val/val9B.dat"},
-        {"../instance/val/val9C.dat"},
-        {"../instance/val/val9D.dat"},
-        {"../instance/val/val10A.dat"},
-        {"../instance/val/val10B.dat"},
-        {"../instance/val/val10C.dat"},
-        {"../instance/val/val10D.dat"},
-        // ---------------------------
-        {"../instance/egl/egl-e1-A.dat"},
-        {"../instance/egl/egl-e1-B.dat"},
-        {"../instance/egl/egl-e1-C.dat"},
-        {"../instance/egl/egl-e2-A.dat"},
-        {"../instance/egl/egl-e2-B.dat"},
-        {"../instance/egl/egl-e2-C.dat"},
-        {"../instance/egl/egl-e3-A.dat"},
-        {"../instance/egl/egl-e3-B.dat"},
-        {"../instance/egl/egl-e3-C.dat"},
-        {"../instance/egl/egl-e4-A.dat"},
-        {"../instance/egl/egl-e4-B.dat"},
-        {"../instance/egl/egl-e4-C.dat"},
-        {"../instance/egl/egl-s1-A.dat"},
-        {"../instance/egl/egl-s1-B.dat"},
-        {"../instance/egl/egl-s1-C.dat"},
-        {"../instance/egl/egl-s2-A.dat"},
-        {"../instance/egl/egl-s2-B.dat"},
-        {"../instance/egl/egl-s2-C.dat"},
-        {"../instance/egl/egl-s3-A.dat"},
-        {"../instance/egl/egl-s3-B.dat"},
-        {"../instance/egl/egl-s3-C.dat"},
-        {"../instance/egl/egl-s4-A.dat"},
-        {"../instance/egl/egl-s4-B.dat"},
-        {"../instance/egl/egl-s4-C.dat"},
+        {"./instance/egl/egl-e1-A.dat"},
+        {"./instance/egl/egl-e1-B.dat"},
+        {"./instance/egl/egl-e1-C.dat"},
+        {"./instance/egl/egl-e2-A.dat"},
+        {"./instance/egl/egl-e2-B.dat"},
+        {"./instance/egl/egl-e2-C.dat"},
+        {"./instance/egl/egl-e3-A.dat"},
+        {"./instance/egl/egl-e3-B.dat"},
+        {"./instance/egl/egl-e3-C.dat"},
+        {"./instance/egl/egl-e4-A.dat"},
+        {"./instance/egl/egl-e4-B.dat"},
+        {"./instance/egl/egl-e4-C.dat"},
+        {"./instance/egl/egl-s1-A.dat"},
+        {"./instance/egl/egl-s1-B.dat"},
+        {"./instance/egl/egl-s1-C.dat"},
+        {"./instance/egl/egl-s2-A.dat"},
+        {"./instance/egl/egl-s2-B.dat"},
+        {"./instance/egl/egl-s2-C.dat"},
+        {"./instance/egl/egl-s3-A.dat"},
+        {"./instance/egl/egl-s3-B.dat"},
+        {"./instance/egl/egl-s3-C.dat"},
+        {"./instance/egl/egl-s4-A.dat"},
+        {"./instance/egl/egl-s4-B.dat"},
+        {"./instance/egl/egl-s4-C.dat"},
 };
 
 
 int file_num = sizeof(input_files) / sizeof(char[100]);
-
-//char input_file[100] = "../instance/egl/egl-e1-A.dat"; // the instance can be changed here
 
 
 int random_num(int range) {
@@ -288,19 +278,13 @@ void read_data(int file_index) {
                 fscanf(fp, "%d", &temp_cost);
                 fscanf(fp, "%s", dummy_string);
                 fscanf(fp, "%d", &temp_demand);
-//                cout << temp_node1 << "," << temp_node2 << endl;
-//                cout << temp_node2 << "," << temp_node1 << endl;
 
                 cost[temp_node1][temp_node2] = temp_cost;
                 cost[temp_node2][temp_node1] = temp_cost;
                 min_cost[temp_node1][temp_node2] = temp_cost;
                 min_cost[temp_node2][temp_node1] = temp_cost;
-//                demand[temp_node1][temp_node2] = temp_demand;
-//                demand[temp_node2][temp_node1] = temp_demand;
                 edge_id[temp_node1][temp_node2] = i;
                 edge_id[temp_node2][temp_node1] = i;
-//                served[temp_node1][temp_node2] = 0;
-//                served[temp_node2][temp_node1] = 0;
 
                 task[i * 2 - 2].head = temp_node1;
                 task[i * 2 - 2].tail = temp_node2;
@@ -310,8 +294,6 @@ void read_data(int file_index) {
                 task[i * 2 - 1].demand = temp_demand;
                 total_demand += temp_demand;
 
-//                adjacency_list[temp_node1].push_back(temp_node2);
-//                adjacency_list[temp_node2].push_back(temp_node1);
             }
         } else if (strcmp(dummy_string, "LISTA_ARISTAS_NOREQ") == 0) {
             fscanf(fp, "%s", dummy_string);
@@ -326,8 +308,6 @@ void read_data(int file_index) {
                 cost[temp_node2][temp_node1] = temp_cost;
                 min_cost[temp_node1][temp_node2] = temp_cost;
                 min_cost[temp_node2][temp_node1] = temp_cost;
-//                demand[temp_node1][temp_node2] = 0;
-//                demand[temp_node2][temp_node1] = 0;
                 edge_id[temp_node1][temp_node2] = i;
                 edge_id[temp_node2][temp_node1] = i;
             }
@@ -1344,16 +1324,7 @@ bool merge_split(Individual &individual) {
                     }
                 }
             }
-//            cout << "--------------------1" << endl;
-//            for (int c = 0; c < temp_split_rst.size(); c++) {
-//                for (int t = 0; t < temp_split_rst[c].size(); t++) {
-//                    cout << temp_split_rst[c][t] << ", ";
-//                }
-//                cout << endl;
-//            }
-//            cout << "--------------------2" << endl;
-//            calc_cost(individual);
-//            int before = individual.total_cost;
+
             if (best_split_cost < old_cost) {
                 if (temp_split_rst.size() == 2) {
                     individual.solution[i].task_index.clear();
@@ -1365,7 +1336,6 @@ bool merge_split(Individual &individual) {
                         individual.solution[j].task_index.push_back(temp_split_rst[1][t]);
                     }
                 } else if (temp_split_rst.size() == 1) {
-//                cout << "1111111111111111111111111111111111111" << endl;
                     individual.solution[i].task_index.clear();
                     for (int t = 0; t < temp_split_rst[0].size(); t++) {
                         individual.solution[i].task_index.push_back(temp_split_rst[0][t]);
@@ -1390,11 +1360,6 @@ bool merge_split(Individual &individual) {
                     }
                 }
             }
-//            calc_cost(individual);
-//            int after = individual.total_cost;
-//            if (before > after) {
-//                cout << "wefhjopasdijfhioasdjufljadfal;" << before << ", " << after << endl;
-//            }
         }
     }
 
@@ -1502,16 +1467,7 @@ bool merge_split_three(Individual &individual) {
                         }
                     }
                 }
-//            cout << "--------------------1" << endl;
-//            for (int c = 0; c < temp_split_rst.size(); c++) {
-//                for (int t = 0; t < temp_split_rst[c].size(); t++) {
-//                    cout << temp_split_rst[c][t] << ", ";
-//                }
-//                cout << endl;
-//            }
-//            cout << "--------------------2" << endl;
-//            calc_cost(individual);
-//            int before = individual.total_cost;
+
                 if (best_split_cost < old_cost) {
                     if (temp_split_rst.size() == 3) {
                         individual.solution[i].task_index.clear();
@@ -1566,11 +1522,6 @@ bool merge_split_three(Individual &individual) {
                     }
                 }
             }
-//            calc_cost(individual);
-//            int after = individual.total_cost;
-//            if (before > after) {
-//                cout << "wefhjopasdijfhioasdjufljadfal;" << before << ", " << after << endl;
-//            }
         }
     }
 
@@ -1686,16 +1637,7 @@ bool merge_split_four(Individual &individual) {
                             }
                         }
                     }
-//            cout << "--------------------1" << endl;
-//            for (int c = 0; c < temp_split_rst.size(); c++) {
-//                for (int t = 0; t < temp_split_rst[c].size(); t++) {
-//                    cout << temp_split_rst[c][t] << ", ";
-//                }
-//                cout << endl;
-//            }
-//            cout << "--------------------2" << endl;
-//            calc_cost(individual);
-//            int before = individual.total_cost;
+
                     if (best_split_cost < old_cost) {
                         if (temp_split_rst.size() == 4) {
                             individual.solution[i].task_index.clear();
@@ -1775,11 +1717,6 @@ bool merge_split_four(Individual &individual) {
                     }
                 }
             }
-//            calc_cost(individual);
-//            int after = individual.total_cost;
-//            if (before > after) {
-//                cout << "wefhjopasdijfhioasdjufljadfal;" << before << ", " << after << endl;
-//            }
         }
     }
 
@@ -1888,7 +1825,7 @@ void local_search() {
 
 void print_best_route(int file_index) {
     ofstream outputfile;
-    outputfile.open("./result.log", ios::app);
+    outputfile.open("./result1.log", ios::app);
     outputfile << input_files[file_index];
     outputfile << endl;
 
@@ -1945,7 +1882,8 @@ void print_best_route(int file_index) {
         get_path(pre_node, depot, rst);
         for (int p_id = 0; p_id < rst.size(); p_id++) {
             cost_so_far += cost[pre_node][rst[p_id]];
-            outputfile << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ",0,"
+            outputfile << "(P," << edge_id[pre_node][rst[p_id]] << "," << pre_node << "," << rst[p_id] << ","
+                       << demand_so_far << ","
                        << cost_so_far << ")";
             pre_node = rst[p_id];
         }
@@ -1970,18 +1908,14 @@ void run() {
             sort(population.begin(), population.end(), sort_fun);
 
             for (int ite = 0; ite < 100; ite++) {
-//            cout << ite << endl;
                 local_search();
                 sort(population.begin(), population.end(), sort_fun);
                 if (population[0].total_cost < best) {
                     best = population[0].total_cost;
                     best_m = ite;
                     end_time = clock();
-//                    cout << "best: " << best << ", " << best_m << endl;
                 }
                 population.erase(population.begin() + random_num(5) + 5, population.end());
-//            init_population();
-//            population.erase(population.begin(), population.begin() + 50);
                 for (int add = 0; add < 10; add++) {
                     Individual indiv;
                     if (random_num(2) < 1) {
@@ -1995,8 +1929,6 @@ void run() {
             }
 
             sort(population.begin(), population.end(), sort_fun);
-//            cout << "best: " << best << ", " << best_m << endl;
-//            cout << best << endl;
 
             if (repeat == 0 || best < best_individual.total_cost) {
                 best_individual.solution.clear();
@@ -2018,7 +1950,6 @@ void run() {
 
 int main() {
     run();
-
     return 0;
 }
 
